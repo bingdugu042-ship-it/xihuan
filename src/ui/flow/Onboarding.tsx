@@ -28,6 +28,7 @@ import {
   type AttrKey,
 } from '@/data/adventureAttributes'
 import { RACES } from '@/data/races'
+import './onboarding.css'
 
 const STEPS = ['身份', '身体', '职业', '加点', '规则'] as const
 
@@ -181,83 +182,60 @@ export function Onboarding() {
   const prev = () => setStep((s) => Math.max(0, s - 1))
 
   return (
-    <div
-      className="absolute inset-0 z-[150] flex items-center justify-center overflow-y-auto px-4 py-6"
-      style={{
-        background: 'radial-gradient(ellipse at 50% 0%, #3a2418 0%, #120c16 55%, #070508 100%)',
-      }}
-    >
+    <div className="ob-root">
       <motion.div
-        className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl"
-        style={{
-          background: 'linear-gradient(165deg, rgba(45,28,22,0.96), rgba(18,10,14,0.98))',
-          border: '1px solid rgba(212,181,106,0.35)',
-          boxShadow: '0 24px 60px rgba(0,0,0,0.55)',
-        }}
+        className="ob-card"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <div className="border-b px-5 py-4" style={{ borderColor: 'rgba(212,181,106,0.2)' }}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-[11px] tracking-[0.3em]" style={{ color: 'var(--c-gold)' }}>
+        <div className="ob-head">
+          <div className="ob-head__row">
+            <div className="ob-eyebrow">
               <ScrollText size={14} /> 开局 · 规则书 Ch3/Ch10
             </div>
-            <span className="text-[10px]" style={{ color: 'var(--c-text-dim)' }}>
+            <span className="ob-step-meta">
               {step + 1}/{STEPS.length} {STEPS[step]}
             </span>
           </div>
-          <h1
-            className="mt-2 text-xl tracking-widest"
-            style={{ fontFamily: 'var(--font-dialogue)', color: 'var(--c-text)' }}
-          >
+          <h1 className="ob-title">
             {step === 0 && '你是谁？'}
             {step === 1 && '身体设定'}
             {step === 2 && '选择职业'}
             {step === 3 && '六维加点'}
             {step === 4 && '规则偏好'}
           </h1>
-          <div className="mt-2 flex gap-1">
+          <div className="ob-progress">
             {STEPS.map((_, i) => (
-              <div
-                key={i}
-                className="h-1 flex-1 rounded-full"
-                style={{ background: i <= step ? 'var(--c-gold)' : 'var(--c-gold-soft)' }}
-              />
+              <div key={i} className={`ob-progress__seg${i <= step ? ' is-on' : ''}`} />
             ))}
           </div>
         </div>
 
-        <div className="max-h-[52vh] space-y-3 overflow-y-auto px-5 py-4">
+        <div className="ob-body">
           <AnimatePresence mode="wait">
             {step === 0 && (
               <motion.div key="s0" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }}>
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => fileRef.current?.click()}
-                    className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl"
-                    style={{ border: '1px dashed rgba(212,181,106,0.4)', background: 'rgba(0,0,0,0.25)' }}
-                  >
+                <div className="ob-avatar-row">
+                  <button type="button" onClick={() => fileRef.current?.click()} className="ob-avatar">
                     {form.avatar ? (
-                      <img src={form.avatar} alt="" className="h-full w-full object-cover" />
+                      <img src={form.avatar} alt="" />
                     ) : (
-                      <Camera size={18} style={{ color: 'var(--c-gold)' }} />
+                      <Camera size={18} />
                     )}
                   </button>
                   <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => onPickAvatar(e.target.files?.[0])} />
-                  <p className="text-[11px]" style={{ color: 'var(--c-text-dim)' }}>
+                  <p className="ob-hint" style={{ margin: 0 }}>
                     立绘可选。名讳必填。
                   </p>
                 </div>
                 <Field label="名讳 *" value={form.name} onChange={(v) => set('name', v)} placeholder="你在此世被称呼的名字" />
                 <Field label="貌龄" value={form.age} onChange={(v) => set('age', v)} placeholder="例：二十二" />
-                <label className="mt-2 block text-[11px]" style={{ color: 'var(--c-gold)' }}>
+                <label className="ob-field">
                   种族
                   <select
                     value={form.race}
                     onChange={(e) => set('race', e.target.value)}
-                    className="mt-1 w-full rounded-xl px-3 py-2 text-sm outline-none"
-                    style={{ background: 'rgba(0,0,0,0.28)', color: 'var(--c-text)', border: '1px solid rgba(212,181,106,0.22)' }}
+                    className="ob-select"
                   >
                     <option value="人类">人类</option>
                     {RACES.map((r) => (
@@ -281,10 +259,8 @@ export function Onboarding() {
 
             {step === 1 && (
               <motion.div key="s1" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }}>
-                <p className="mb-2 text-[11px]" style={{ color: 'var(--c-text-dim)' }}>
-                  规则书 Ch3.2：性别与体型影响叙事与部分判定。
-                </p>
-                <div className="flex gap-2">
+                <p className="ob-hint">规则书 Ch3.2：性别与体型影响叙事与部分判定。</p>
+                <div className="ob-chip-row">
                   {(
                     [
                       ['female', '女'],
@@ -296,12 +272,7 @@ export function Onboarding() {
                       key={g}
                       type="button"
                       onClick={() => set('gender', g)}
-                      className="flex-1 rounded-xl py-2 text-sm"
-                      style={{
-                        background: form.gender === g ? 'rgba(212,181,106,0.25)' : 'rgba(0,0,0,0.28)',
-                        color: form.gender === g ? 'var(--c-text)' : 'var(--c-text-dim)',
-                        border: `1px solid ${form.gender === g ? 'rgba(212,181,106,0.5)' : 'rgba(212,181,106,0.15)'}`,
-                      }}
+                      className={`ob-chip${form.gender === g ? ' is-on' : ''}`}
                     >
                       {label}
                     </button>
@@ -320,10 +291,10 @@ export function Onboarding() {
 
             {step === 2 && (
               <motion.div key="s2" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }}>
-                <p className="mb-2 flex items-center gap-1 text-[11px]" style={{ color: 'var(--c-text-dim)' }}>
+                <p className="ob-hint" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Swords size={12} /> 九职业选一，决定初始技能与主属性。
                 </p>
-                <div className="space-y-2">
+                <div>
                   {ADVENTURE_CLASSES.map((c) => {
                     const selected = form.classId === c.id
                     return (
@@ -331,21 +302,13 @@ export function Onboarding() {
                         key={c.id}
                         type="button"
                         onClick={() => set('classId', c.id)}
-                        className="w-full rounded-xl px-3 py-2.5 text-left"
-                        style={{
-                          background: selected ? 'rgba(212,181,106,0.2)' : 'rgba(0,0,0,0.28)',
-                          border: `1px solid ${selected ? 'rgba(212,181,106,0.45)' : 'rgba(212,181,106,0.15)'}`,
-                        }}
+                        className={`ob-class${selected ? ' is-on' : ''}`}
                       >
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium" style={{ color: 'var(--c-text)' }}>
-                            {c.name}
-                          </span>
-                          <span className="text-[10px]" style={{ color: 'var(--c-gold)' }}>
-                            {c.mainAttr}
-                          </span>
+                        <div className="ob-class__top">
+                          <span className="ob-class__name">{c.name}</span>
+                          <span className="ob-class__attr">{c.mainAttr}</span>
                         </div>
-                        <p className="mt-0.5 text-[10px]" style={{ color: 'var(--c-text-dim)' }}>
+                        <p className="ob-class__meta">
                           {c.role} · {c.skill}
                         </p>
                       </button>
@@ -357,37 +320,16 @@ export function Onboarding() {
 
             {step === 3 && (
               <motion.div key="s3" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }}>
-                <p className="mb-2 text-[11px]" style={{ color: 'var(--c-text-dim)' }}>
-                  20 点自由分配 · 魅力已 +4（基础 14）· 单项上限 18
-                </p>
-                <p
-                  className="mb-3 text-center text-sm"
-                  style={{ color: pointsLeft === 0 ? '#8fd4a0' : 'var(--c-gold)' }}
-                >
-                  剩余点数：{pointsLeft}
-                </p>
+                <p className="ob-hint">20 点自由分配 · 魅力已 +4（基础 14）· 单项上限 18</p>
+                <p className={`ob-points${pointsLeft === 0 ? ' is-done' : ''}`}>剩余点数：{pointsLeft}</p>
                 {(Object.keys(ATTR_LABELS) as AttrKey[]).map((key) => (
-                  <div key={key} className="mb-2 flex items-center gap-2">
-                    <span className="w-10 text-[11px]" style={{ color: 'var(--c-gold)' }}>
-                      {ATTR_LABELS[key]}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => bumpAttr(key, -1)}
-                      className="h-8 w-8 rounded-lg text-sm"
-                      style={{ background: 'rgba(0,0,0,0.35)', color: 'var(--c-text)' }}
-                    >
+                  <div key={key} className="ob-stat">
+                    <span className="ob-stat__label">{ATTR_LABELS[key]}</span>
+                    <button type="button" onClick={() => bumpAttr(key, -1)} className="ob-stat__btn">
                       −
                     </button>
-                    <span className="w-8 text-center text-sm" style={{ color: 'var(--c-text)' }}>
-                      {form.attributes[key]}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => bumpAttr(key, 1)}
-                      className="h-8 w-8 rounded-lg text-sm"
-                      style={{ background: 'rgba(0,0,0,0.35)', color: 'var(--c-text)' }}
-                    >
+                    <span className="ob-stat__val">{form.attributes[key]}</span>
+                    <button type="button" onClick={() => bumpAttr(key, 1)} className="ob-stat__btn">
                       +
                     </button>
                   </div>
@@ -397,11 +339,11 @@ export function Onboarding() {
 
             {step === 4 && (
               <motion.div key="s4" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }}>
-                <p className="mb-3 flex items-center gap-1 text-[11px]" style={{ color: 'var(--c-text-dim)' }}>
+                <p className="ob-hint" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Dices size={12} /> 规则书 Ch10 开局偏好，可在设置页随时修改。
                 </p>
                 <PrefRow label="H 骰子">
-                  <div className="flex gap-1">
+                  <div style={{ display: 'flex', gap: 6 }}>
                     {(['on', 'mixed', 'off'] as const).map((v) => (
                       <MiniBtn key={v} active={form.diceMode === v} onClick={() => set('diceMode', v)}>
                         {v === 'on' ? '开' : v === 'mixed' ? '混合' : '关'}
@@ -410,7 +352,7 @@ export function Onboarding() {
                   </div>
                 </PrefRow>
                 <PrefRow label="粗口">
-                  <div className="flex flex-wrap gap-1">
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                     {(
                       [
                         ['off', '关'],
@@ -445,27 +387,13 @@ export function Onboarding() {
           </AnimatePresence>
         </div>
 
-        <div className="flex gap-2 border-t px-5 py-4" style={{ borderColor: 'var(--c-gold-soft)' }}>
+        <div className="ob-foot">
           {step > 0 && (
-            <button
-              type="button"
-              onClick={prev}
-              className="flex items-center justify-center gap-1 rounded-xl px-4 py-3 text-sm"
-              style={{ background: 'rgba(0,0,0,0.3)', color: 'var(--c-gold)', border: '1px solid var(--c-gold-soft)' }}
-            >
+            <button type="button" onClick={prev} className="ob-btn-back">
               <ChevronLeft size={14} /> 上一步
             </button>
           )}
-          <button
-            type="button"
-            disabled={!canNext() || submitting}
-            onClick={next}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm tracking-widest disabled:opacity-40"
-              style={{
-                background: 'linear-gradient(135deg, var(--c-gold), #a67c3a)',
-                color: '#1a0f12',
-              }}
-          >
+          <button type="button" disabled={!canNext() || submitting} onClick={next} className="ob-btn-next">
             {step < STEPS.length - 1 ? (
               <>
                 下一步 <ChevronRight size={14} />
@@ -497,13 +425,8 @@ function Field({
   placeholder?: string
   textarea?: boolean
 }) {
-  const style = {
-    background: 'rgba(0,0,0,0.28)',
-    color: 'var(--c-text)',
-    border: '1px solid rgba(212,181,106,0.22)',
-  }
   return (
-    <label className="mt-2 block text-[11px]" style={{ color: 'var(--c-gold)' }}>
+    <label className="ob-field">
       {label}
       {textarea ? (
         <textarea
@@ -511,16 +434,14 @@ function Field({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           rows={3}
-          className="mt-1 w-full rounded-xl px-3 py-2 text-sm outline-none"
-          style={style}
+          className="ob-textarea"
         />
       ) : (
         <input
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="mt-1 w-full rounded-xl px-3 py-2 text-sm outline-none"
-          style={style}
+          className="ob-input"
         />
       )}
     </label>
@@ -529,10 +450,8 @@ function Field({
 
 function PrefRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="mb-3">
-      <p className="mb-1.5 text-[11px]" style={{ color: 'var(--c-gold)' }}>
-        {label}
-      </p>
+    <div style={{ marginBottom: 12 }}>
+      <p className="ob-pref-label">{label}</p>
       {children}
     </div>
   )
@@ -548,16 +467,7 @@ function MiniBtn({
   children: React.ReactNode
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="rounded-lg px-3 py-1.5 text-[11px]"
-      style={{
-        background: active ? 'rgba(212,181,106,0.25)' : 'rgba(0,0,0,0.28)',
-        color: active ? 'var(--c-text)' : 'var(--c-text-dim)',
-        border: `1px solid ${active ? 'rgba(212,181,106,0.4)' : 'rgba(212,181,106,0.15)'}`,
-      }}
-    >
+    <button type="button" onClick={onClick} className={`ob-mini${active ? ' is-on' : ''}`}>
       {children}
     </button>
   )

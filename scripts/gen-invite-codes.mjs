@@ -8,7 +8,7 @@ import { dirname, join } from 'node:path'
 const __dir = dirname(fileURLToPath(import.meta.url))
 const ADMIN = 'XY-ADMIN-MASTER-2026'
 const codes = new Set()
-while (codes.size < 50) {
+while (codes.size < 3) {
   codes.add(`XY-${randomBytes(3).toString('hex').toUpperCase()}`)
 }
 const list = [...codes].sort()
