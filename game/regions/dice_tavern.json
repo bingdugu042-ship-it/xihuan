@@ -1,0 +1,15 @@
+﻿{
+    "sceneBg":  "",
+    "id":  "dice_tavern",
+    "defaultParticipants":  [
+
+                            ],
+    "type":  "private",
+    "description":  "长桌中央嵌着骨骰。关键分歧要用掷骰说话；半魔骰师冷眼旁观。",
+    "themeZone":  "social",
+    "name":  "命运骰厅",
+    "premise":  "长桌中央嵌着骨骰。关键分歧要用掷骰说话；半魔骰师冷眼旁观。",
+    "npcArchetype":  "西幻男主",
+    "category":  "offline",
+    "worldId":  "aetherion"
+}

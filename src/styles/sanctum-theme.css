@@ -1,0 +1,751 @@
+/* ============================================================
+   西欧圣殿白金 · 全局装饰 / 动画 / 组件覆写
+   ============================================================ */
+
+@keyframes sanctum-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+@keyframes sanctum-ray-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scaleY(1);
+  }
+  50% {
+    opacity: 0.65;
+    transform: scaleY(1.04);
+  }
+}
+
+@keyframes sanctum-dust-drift {
+  0% {
+    transform: translate3d(0, 8px, 0) scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.7;
+  }
+  85% {
+    opacity: 0.35;
+  }
+  100% {
+    transform: translate3d(12px, -110vh, 0) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes sanctum-border-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(168, 137, 78, 0.28),
+      0 12px 40px rgba(90, 70, 40, 0.08);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(196, 163, 90, 0.5),
+      0 16px 48px rgba(168, 137, 78, 0.16);
+  }
+}
+
+@keyframes sanctum-title-in {
+  from {
+    opacity: 0;
+    letter-spacing: 0.35em;
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    letter-spacing: 0.12em;
+    filter: blur(0);
+  }
+}
+
+[data-ambiance='sanctum'] body {
+  background: var(--bg-gradient);
+  color: var(--c-text);
+}
+
+[data-ambiance='sanctum'] .app-frame {
+  background: var(--bg-gradient);
+}
+
+[data-ambiance='sanctum'] .app-frame-border {
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(var(--c-bg-elevated), var(--c-bg-elevated)) padding-box,
+    linear-gradient(
+      120deg,
+      rgba(196, 163, 90, 0.15),
+      rgba(255, 252, 247, 0.9),
+      rgba(168, 137, 78, 0.55),
+      rgba(255, 252, 247, 0.9),
+      rgba(196, 163, 90, 0.2)
+    )
+      border-box;
+  background-size: 100% 100%, 300% 100%;
+  animation: sanctum-shimmer 14s linear infinite;
+  border-radius: var(--radius-lg);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 252, 247, 0.65),
+    0 0 40px rgba(196, 163, 90, 0.12);
+}
+
+[data-ambiance='sanctum'] .app-frame-border::before,
+[data-ambiance='sanctum'] .app-frame-border::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(196, 163, 90, 0.35),
+    transparent
+  );
+  width: 1px;
+  top: 12%;
+  bottom: 12%;
+  opacity: 0.55;
+  animation: sanctum-ray-pulse 6s ease-in-out infinite;
+}
+
+[data-ambiance='sanctum'] .app-frame-border::before {
+  left: 10px;
+}
+[data-ambiance='sanctum'] .app-frame-border::after {
+  right: 10px;
+  animation-delay: 1.2s;
+}
+
+[data-ambiance='sanctum'] .park-corner {
+  background: linear-gradient(135deg, rgba(196, 163, 90, 0.55), transparent 62%);
+  opacity: 0.85;
+}
+
+[data-ambiance='sanctum'] .ambient-glow {
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(255, 252, 247, 0.7), transparent 70%),
+    radial-gradient(ellipse 40% 30% at 70% 30%, rgba(196, 163, 90, 0.18), transparent 70%);
+  opacity: 1;
+  mix-blend-mode: soft-light;
+}
+
+[data-ambiance='sanctum'] .park-night-veil {
+  display: none;
+}
+
+/* —— 圣殿金尘 —— */
+.sanctum-ambient {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.sanctum-ambient__ray {
+  position: absolute;
+  top: -10%;
+  width: 28%;
+  height: 120%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 252, 247, 0.55) 0%,
+    rgba(196, 163, 90, 0.12) 40%,
+    transparent 75%
+  );
+  filter: blur(18px);
+  transform-origin: top center;
+  animation: sanctum-ray-pulse 8s ease-in-out infinite;
+}
+
+.sanctum-ambient__ray--1 {
+  left: 18%;
+  opacity: 0.45;
+}
+.sanctum-ambient__ray--2 {
+  left: 48%;
+  width: 22%;
+  animation-delay: 2s;
+  opacity: 0.35;
+}
+.sanctum-ambient__ray--3 {
+  left: 72%;
+  width: 18%;
+  animation-delay: 4s;
+  opacity: 0.4;
+}
+
+.sanctum-ambient__dust {
+  position: absolute;
+  bottom: -4%;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff9ef 0%, #c4a35a 55%, transparent 75%);
+  box-shadow: 0 0 6px rgba(196, 163, 90, 0.7);
+  animation: sanctum-dust-drift linear infinite;
+}
+
+/* —— 卡片 / 玻璃 —— */
+[data-ambiance='sanctum'] .glass-card,
+[data-ambiance='sanctum'] .glass-panel,
+[data-ambiance='sanctum'] .settings-section {
+  background: linear-gradient(165deg, rgba(255, 252, 247, 0.92) 0%, rgba(243, 238, 230, 0.88) 100%) !important;
+  border: 1px solid rgba(168, 137, 78, 0.28) !important;
+  color: var(--c-text) !important;
+  box-shadow:
+    0 10px 32px rgba(90, 70, 40, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  animation: sanctum-border-glow 8s ease-in-out infinite;
+}
+
+[data-ambiance='sanctum'] .settings-section h3,
+[data-ambiance='sanctum'] .tome-page__title,
+[data-ambiance='sanctum'] .tome-sub-shell__title,
+[data-ambiance='sanctum'] .feature-card__label {
+  font-family: var(--font-dialogue);
+  letter-spacing: 0.08em;
+  color: #2c261c !important;
+  font-weight: 700;
+}
+
+[data-ambiance='sanctum'] .tome-page__title {
+  animation: sanctum-title-in 0.9s ease-out both;
+  background: linear-gradient(100deg, #2c261c 0%, #8f7342 45%, #2c261c 90%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+  animation:
+    sanctum-title-in 0.9s ease-out both,
+    sanctum-shimmer 10s linear infinite;
+}
+
+[data-ambiance='sanctum'] .tome-page {
+  background: transparent;
+}
+
+[data-ambiance='sanctum'] .tome-page__header::after {
+  background: linear-gradient(90deg, transparent, rgba(168, 137, 78, 0.55), transparent);
+  height: 1px;
+}
+
+[data-ambiance='sanctum'] .tome-card,
+[data-ambiance='sanctum'] .feature-card,
+[data-ambiance='sanctum'] .atlas-cover-card,
+[data-ambiance='sanctum'] .game-card {
+  background: linear-gradient(160deg, #fffcf7 0%, #f0e8da 100%) !important;
+  border: 1px solid rgba(168, 137, 78, 0.3) !important;
+  color: #2c261c !important;
+  box-shadow: 0 8px 24px rgba(90, 70, 40, 0.08);
+}
+
+[data-ambiance='sanctum'] .feature-card__sub,
+[data-ambiance='sanctum'] .tome-page__subtitle,
+[data-ambiance='sanctum'] .tome-hint {
+  color: #5a5246 !important;
+}
+
+[data-ambiance='sanctum'] .party-strip__chip {
+  background: #ffffff !important;
+  border-color: rgba(107, 84, 40, 0.35) !important;
+  color: #1a1610 !important;
+}
+
+[data-ambiance='sanctum'] .party-strip__toggle {
+  background: #fff !important;
+  border-color: rgba(107, 84, 40, 0.4) !important;
+  color: #1a1610 !important;
+}
+
+[data-ambiance='sanctum'] .party-strip__favor {
+  color: #6b5428 !important;
+}
+
+[data-ambiance='sanctum'] .tome-section__title {
+  font-family: var(--font-dialogue);
+  color: #6b5428 !important;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+[data-ambiance='sanctum'] .game-btn--primary,
+[data-ambiance='sanctum'] .combat-overlay__primary,
+[data-ambiance='sanctum'] .combat-overlay__actions button {
+  background: linear-gradient(135deg, #e8d5a8, #a8894e 55%, #8f7342) !important;
+  color: #1f1a12 !important;
+  border: 1px solid rgba(255, 252, 247, 0.4);
+  box-shadow: 0 4px 16px rgba(168, 137, 78, 0.35);
+}
+
+[data-ambiance='sanctum'] .chat-header:not(.chat-header--preview) {
+  background: linear-gradient(180deg, rgba(255, 252, 247, 0.92), rgba(243, 238, 230, 0.78)) !important;
+  border-bottom: 1px solid rgba(168, 137, 78, 0.28) !important;
+  backdrop-filter: blur(14px);
+}
+
+[data-ambiance='sanctum'] .cockpit-status,
+[data-ambiance='sanctum'] .chat-top-deck__bar,
+[data-ambiance='sanctum'] .party-strip {
+  background: rgba(255, 252, 247, 0.96) !important;
+  border-color: rgba(107, 84, 40, 0.28) !important;
+  color: #1a1610 !important;
+}
+
+[data-ambiance='sanctum'] .cockpit-status__place,
+[data-ambiance='sanctum'] .cockpit-status__npc-name,
+[data-ambiance='sanctum'] .cockpit-guide__text {
+  color: #1a1610 !important;
+}
+
+[data-ambiance='sanctum'] .cockpit-status__meters,
+[data-ambiance='sanctum'] .cockpit-status__meta,
+[data-ambiance='sanctum'] .cockpit-status__hint,
+[data-ambiance='sanctum'] .cockpit-status__mode,
+[data-ambiance='sanctum'] .cockpit-status__compact-row {
+  color: #3d362c !important;
+}
+
+[data-ambiance='sanctum'] .cockpit-status__compact-favor,
+[data-ambiance='sanctum'] .cockpit-status__compact-name {
+  color: #1a1610 !important;
+}
+
+[data-ambiance='sanctum'] .cockpit-chip,
+[data-ambiance='sanctum'] .chat-top-chip,
+[data-ambiance='sanctum'] .action-dock__btn {
+  background: #fff !important;
+  border: 1px solid rgba(107, 84, 40, 0.35) !important;
+  color: #1a1610 !important;
+}
+
+[data-ambiance='sanctum'] .cockpit-chip.is-active,
+[data-ambiance='sanctum'] .chat-top-chip--active {
+  background: linear-gradient(135deg, #e8d5a8, #c4a574) !important;
+  border-color: #8a6a2e !important;
+  color: #1a1610 !important;
+}
+
+[data-ambiance='sanctum'] .action-dock {
+  background: rgba(255, 252, 247, 0.98) !important;
+  border-top-color: rgba(107, 84, 40, 0.3) !important;
+}
+
+[data-ambiance='sanctum'] .composer-plus-sheet {
+  background: #fffcf7 !important;
+  border-top-color: rgba(107, 84, 40, 0.3) !important;
+}
+
+[data-ambiance='sanctum'] .composer-plus-item span {
+  color: #1a1610 !important;
+}
+
+/* 气泡：强制深墨正文（玩家气泡除外） */
+[data-ambiance='sanctum'] .bubble-body:not(.bubble-body--mine) {
+  color: #1a1610 !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(107, 84, 40, 0.28) !important;
+}
+
+[data-ambiance='sanctum'] .bubble-body--mine {
+  color: #fffef8 !important;
+}
+
+[data-ambiance='sanctum'] .bubble-body--narrator {
+  background: #f5efe3 !important;
+  color: #3d2e14 !important;
+  border: 1px solid rgba(107, 84, 40, 0.28) !important;
+}
+
+[data-ambiance='sanctum'] .npc-status-row {
+  background: #f7f1e6 !important;
+  border-left-width: 3px;
+}
+
+[data-ambiance='sanctum'] .npc-status-row__label {
+  color: #6b5428 !important;
+}
+
+[data-ambiance='sanctum'] .npc-status-row__text {
+  color: #1a1610 !important;
+}
+
+[data-ambiance='sanctum'] .message-actions button,
+[data-ambiance='sanctum'] .bubble-row svg {
+  color: #3d362c !important;
+  opacity: 1 !important;
+}
+
+[data-ambiance='sanctum'] .npc-bio-block {
+  background: rgba(255, 252, 247, 0.92);
+}
+
+[data-ambiance='sanctum'] .npc-bio-block__text {
+  color: #2c261c;
+}
+
+[data-ambiance='sanctum'] .combat-overlay {
+  background: rgba(44, 38, 28, 0.45);
+}
+
+[data-ambiance='sanctum'] .combat-overlay__panel,
+[data-ambiance='sanctum'] .npc-body-modal__panel {
+  background: linear-gradient(180deg, #fffcf7 0%, #efe6d6 100%);
+  border: 1px solid rgba(168, 137, 78, 0.4);
+  color: #2c261c;
+  box-shadow: 0 24px 60px rgba(90, 70, 40, 0.25);
+}
+
+[data-ambiance='sanctum'] .combat-overlay__head h3,
+[data-ambiance='sanctum'] .npc-body-modal__head h3 {
+  font-family: var(--font-dialogue);
+  color: #8f7342;
+}
+
+[data-ambiance='sanctum'] .bottom-nav,
+[data-ambiance='sanctum'] .template-mobile-dock {
+  background: rgba(255, 252, 247, 0.92) !important;
+  border-top: 1px solid rgba(168, 137, 78, 0.28) !important;
+  backdrop-filter: blur(16px);
+}
+
+[data-ambiance='sanctum'] .action-dock,
+[data-ambiance='sanctum'] .sidebar-panel,
+[data-ambiance='sanctum'] .glass-bar {
+  background: rgba(255, 252, 247, 0.96) !important;
+  border-color: rgba(90, 66, 24, 0.35) !important;
+  color: #0f0d0a !important;
+}
+
+/* 三杠侧栏：会话标题 / Tab 标签强制深墨（不被 theme.json 浅金盖掉） */
+[data-ambiance='sanctum'] .glass-bar {
+  --c-text: #0f0d0a;
+  --c-text-dim: #2a241c;
+  --c-text-muted: #4a4338;
+  --c-primary: #5a4218;
+  --c-primary-soft: rgba(90, 66, 24, 0.14);
+}
+
+[data-ambiance='sanctum'] .glass-bar .sidebar-drawer__title,
+[data-ambiance='sanctum'] .glass-bar .sidebar-drawer__tab,
+[data-ambiance='sanctum'] .glass-bar .sidebar-drawer__item-title,
+[data-ambiance='sanctum'] .glass-bar .sidebar-drawer__item-sub,
+[data-ambiance='sanctum'] .glass-bar .sidebar-drawer__empty {
+  color: #0f0d0a !important;
+}
+
+[data-ambiance='sanctum'] .glass-bar .sidebar-drawer__tab.is-active {
+  color: #5a4218 !important;
+  background: rgba(90, 66, 24, 0.12) !important;
+}
+
+[data-ambiance='sanctum'] .glass-bar .sidebar-drawer__item-sub {
+  color: #2a241c !important;
+}
+
+[data-ambiance='sanctum'] .tome-sidebar {
+  background: linear-gradient(180deg, #fffcf7 0%, #efe6d6 100%) !important;
+  border-right: 1px solid rgba(168, 137, 78, 0.3);
+  color: #2c261c;
+}
+
+[data-ambiance='sanctum'] .tome-sidebar__title,
+[data-ambiance='sanctum'] .tome-sidebar__hero-name,
+[data-ambiance='sanctum'] .tome-sidebar__region-name {
+  font-family: var(--font-dialogue);
+  color: #2c261c !important;
+}
+
+[data-ambiance='sanctum'] .tome-sidebar__nav .tome-nav__item--active {
+  background: rgba(196, 163, 90, 0.22) !important;
+  color: #5a4020 !important;
+}
+
+[data-ambiance='sanctum'] .composer-input {
+  background: #ffffff !important;
+  color: #0f0d0a !important;
+  border: 1px solid rgba(90, 66, 24, 0.35) !important;
+}
+
+[data-ambiance='sanctum'] .palette-switch__card.is-active {
+  outline: 2px solid rgba(168, 137, 78, 0.65);
+  outline-offset: 2px;
+}
+
+/* —— 设置页：强制高对比深墨 + 淡色输入条 —— */
+[data-ambiance='sanctum'] .settings-tab {
+  color: #0f0d0a !important;
+  background: #faf7f1 !important;
+  --c-bg: #faf7f1;
+  --c-bg-soft: #f3eee6;
+  --c-bg-elevated: #ffffff;
+  --c-text: #0f0d0a;
+  --c-text-dim: #2a241c;
+  --c-border: rgba(90, 66, 24, 0.35);
+}
+
+[data-ambiance='sanctum'] .settings-section,
+[data-ambiance='sanctum'] .glass-card.settings-section {
+  background: #ffffff !important;
+  border: 1px solid rgba(90, 66, 24, 0.4) !important;
+  color: #0f0d0a !important;
+  box-shadow: 0 8px 24px rgba(40, 30, 16, 0.1) !important;
+  animation: none !important;
+}
+
+[data-ambiance='sanctum'] .settings-section h3,
+[data-ambiance='sanctum'] .settings-section label,
+[data-ambiance='sanctum'] .settings-section .text-sm,
+[data-ambiance='sanctum'] .settings-section .text-\[11px\],
+[data-ambiance='sanctum'] .settings-section .text-\[10px\],
+[data-ambiance='sanctum'] .settings-section .text-\[12px\],
+[data-ambiance='sanctum'] .settings-section p,
+[data-ambiance='sanctum'] .settings-section span {
+  color: #0f0d0a !important;
+}
+
+[data-ambiance='sanctum'] .settings-section .text-\[10px\],
+[data-ambiance='sanctum'] .settings-section .text-\[11px\] {
+  color: #2a241c !important;
+}
+
+[data-ambiance='sanctum'] .settings-ai-summary,
+[data-ambiance='sanctum'] .settings-ai-summary span {
+  color: #0f0d0a !important;
+}
+
+[data-ambiance='sanctum'] .settings-slider input[type='range'] {
+  accent-color: #6b5420;
+}
+
+/* 输入框 / 下拉 / 多行：一律奶白条，禁止黑煤炭底 */
+[data-ambiance='sanctum'] .settings-tab input:not([type='range']):not([type='color']):not([type='checkbox']):not([type='radio']),
+[data-ambiance='sanctum'] .settings-tab textarea,
+[data-ambiance='sanctum'] .settings-tab select {
+  background: #ffffff !important;
+  color: #0f0d0a !important;
+  border: 1px solid rgba(90, 66, 24, 0.35) !important;
+  caret-color: #0f0d0a;
+}
+
+[data-ambiance='sanctum'] .settings-tab input::placeholder,
+[data-ambiance='sanctum'] .settings-tab textarea::placeholder {
+  color: #6a6258 !important;
+  opacity: 1;
+}
+
+[data-ambiance='gloom'] .settings-section,
+[data-ambiance='warm'] .settings-section {
+  --c-text: #0f0d0a;
+  --c-text-dim: #2a241c;
+  --c-text-muted: #4a4338;
+  --c-bg: #faf7f1;
+  --c-bg-soft: #f3eee6;
+  --c-bg-elevated: #ffffff;
+  background: #ffffff !important;
+  border: 1px solid rgba(90, 66, 24, 0.35) !important;
+  color: #0f0d0a !important;
+}
+
+[data-ambiance='gloom'] .settings-section h3,
+[data-ambiance='gloom'] .settings-section .text-sm,
+[data-ambiance='gloom'] .settings-section label,
+[data-ambiance='warm'] .settings-section h3,
+[data-ambiance='warm'] .settings-section .text-sm,
+[data-ambiance='warm'] .settings-section label {
+  color: #0f0d0a !important;
+}
+
+[data-ambiance='gloom'] .settings-section .text-\[11px\],
+[data-ambiance='gloom'] .settings-section .text-\[10px\],
+[data-ambiance='warm'] .settings-section .text-\[11px\],
+[data-ambiance='warm'] .settings-section .text-\[10px\] {
+  color: #2a241c !important;
+}
+
+[data-ambiance='gloom'] .settings-tab input:not([type='range']):not([type='color']):not([type='checkbox']):not([type='radio']),
+[data-ambiance='gloom'] .settings-tab textarea,
+[data-ambiance='gloom'] .settings-tab select,
+[data-ambiance='warm'] .settings-tab input:not([type='range']):not([type='color']):not([type='checkbox']):not([type='radio']),
+[data-ambiance='warm'] .settings-tab textarea,
+[data-ambiance='warm'] .settings-tab select {
+  background: #ffffff !important;
+  color: #0f0d0a !important;
+  border: 1px solid rgba(90, 66, 24, 0.35) !important;
+}
+
+.palette-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.palette-switch__card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  min-height: 88px;
+  padding: 12px;
+  text-align: left;
+  border: 1px solid rgba(90, 70, 40, 0.18);
+  cursor: pointer;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.palette-switch__card:hover {
+  transform: translateY(-2px);
+}
+
+.palette-switch__card--classic {
+  background: linear-gradient(145deg, #2a1c14, #100b08);
+  color: #f5ebe0;
+}
+
+.palette-switch__card--sanctum {
+  background:
+    radial-gradient(ellipse at 30% 0%, rgba(255, 252, 247, 0.95), transparent 55%),
+    linear-gradient(160deg, #f7f2ea, #e8dfd0);
+  color: #2c261c;
+  border-color: rgba(168, 137, 78, 0.4);
+}
+
+.palette-switch__name {
+  font-family: var(--font-dialogue);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.palette-switch__desc {
+  margin-top: 4px;
+  font-size: 10px;
+  opacity: 0.78;
+  line-height: 1.35;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-ambiance='sanctum'] .app-frame-border,
+  [data-ambiance='sanctum'] .glass-card,
+  [data-ambiance='sanctum'] .settings-section,
+  [data-ambiance='sanctum'] .tome-page__title,
+  .sanctum-ambient__ray,
+  .sanctum-ambient__dust {
+    animation: none !important;
+  }
+}
+
+/* —— 地图弹窗 / 入域卡：强制淡色高对比 —— */
+[data-ambiance='sanctum'] .scroll-map__panel,
+[data-ambiance='sanctum'] .facility-play-card,
+[data-ambiance='sanctum'] .facility-play-page__sheet,
+[data-ambiance='warm'] .scroll-map__panel,
+[data-ambiance='warm'] .facility-play-card {
+  background: linear-gradient(180deg, #fffcf7 0%, #f3eee6 100%) !important;
+  color: #0f0d0a !important;
+  border-color: rgba(90, 66, 24, 0.35) !important;
+}
+
+[data-ambiance='sanctum'] .scroll-map__panel-name,
+[data-ambiance='sanctum'] .scroll-map__panel-desc,
+[data-ambiance='sanctum'] .azeria-region-panel__lead-name,
+[data-ambiance='sanctum'] .facility-play-card__identity-name,
+[data-ambiance='warm'] .scroll-map__panel-name,
+[data-ambiance='warm'] .scroll-map__panel-desc {
+  color: #0f0d0a !important;
+}
+
+[data-ambiance='sanctum'] .scroll-map__panel-archetype,
+[data-ambiance='sanctum'] .scroll-map__panel-tagline,
+[data-ambiance='sanctum'] .scroll-map__panel-section-title,
+[data-ambiance='sanctum'] .azeria-region-panel__lead-title,
+[data-ambiance='sanctum'] .facility-play-card__identity-desc,
+[data-ambiance='sanctum'] .facility-play-card__footer-hint {
+  color: #2a241c !important;
+}
+
+[data-ambiance='sanctum'] .scroll-map__panel .tome-btn,
+[data-ambiance='sanctum'] .azeria-region-panel__city-chip {
+  background: #ffffff !important;
+  color: #1a1610 !important;
+  border: 1px solid rgba(90, 66, 24, 0.35) !important;
+}
+
+[data-ambiance='sanctum'] .scroll-map__panel-more {
+  background: #ffffff !important;
+  color: #1a1610 !important;
+  border-color: rgba(90, 66, 24, 0.4) !important;
+}
+
+[data-ambiance='sanctum'] .scroll-map__panel-enter,
+[data-ambiance='sanctum'] .facility-play-card__enter {
+  background: linear-gradient(135deg, #e8d5a8, #c4a574) !important;
+  color: #1a120c !important;
+}
+
+[data-ambiance='sanctum'] .facility-play-card__name,
+[data-ambiance='sanctum'] .facility-play-card__section-label,
+[data-ambiance='sanctum'] .facility-play-card__lore-scene,
+[data-ambiance='sanctum'] .facility-play-card__free-desc,
+[data-ambiance='sanctum'] .facility-play-card__identity-name {
+  color: #0f0d0a !important;
+}
+
+[data-ambiance='sanctum'] .facility-play-card__stamped {
+  color: #5a4218 !important;
+  background: rgba(90, 66, 24, 0.12) !important;
+}
+
+[data-ambiance='sanctum'] .facility-play-card__identity-desc,
+[data-ambiance='sanctum'] .facility-play-card__footer-hint,
+[data-ambiance='sanctum'] .facility-play-card__no {
+  color: #2a241c !important;
+}
+
+/* 经典暗夜：恢复深色弹窗 */
+[data-ambiance='gloom'] .scroll-map__panel {
+  background:
+    linear-gradient(180deg, rgba(36, 24, 18, 0.98) 0%, rgba(20, 14, 10, 0.99) 100%) !important;
+  color: #f5ebe0 !important;
+  border-color: rgba(201, 163, 90, 0.25) !important;
+}
+
+[data-ambiance='gloom'] .scroll-map__panel-name,
+[data-ambiance='gloom'] .scroll-map__panel-desc,
+[data-ambiance='gloom'] .azeria-region-panel__lead-name {
+  color: #f5ebe0 !important;
+}
+
+[data-ambiance='gloom'] .scroll-map__panel-archetype,
+[data-ambiance='gloom'] .scroll-map__panel-tagline,
+[data-ambiance='gloom'] .scroll-map__panel-section-title,
+[data-ambiance='gloom'] .azeria-region-panel__lead-title {
+  color: #c9b8a4 !important;
+}
+
+[data-ambiance='gloom'] .azeria-region-panel__city-chip,
+[data-ambiance='gloom'] .scroll-map__panel .tome-btn {
+  color: #f5ebe0 !important;
+  background: rgba(201, 163, 90, 0.16) !important;
+  border-color: rgba(201, 163, 90, 0.28) !important;
+}
+
+[data-ambiance='gloom'] .scroll-map__panel-more {
+  color: #e8c878 !important;
+  background: rgba(201, 163, 90, 0.08) !important;
+}
+
+[data-ambiance='gloom'] .facility-play-card {
+  background: linear-gradient(180deg, #1f160f 0%, #17100a 100%) !important;
+  color: #f5ebe0 !important;
+  border-color: rgba(201, 163, 90, 0.12) !important;
+}

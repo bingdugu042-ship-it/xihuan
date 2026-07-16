@@ -1,0 +1,15 @@
+﻿{
+    "sceneBg":  "",
+    "id":  "relic_auction",
+    "defaultParticipants":  [
+
+                            ],
+    "type":  "private",
+    "description":  "绒帘后摆着未署名神器。神裔拍卖师的开价声像心跳，目光却在你身上流连。",
+    "themeZone":  "social",
+    "name":  "圣骸拍卖会",
+    "premise":  "绒帘后摆着未署名神器。神裔拍卖师的开价声像心跳，目光却在你身上流连。",
+    "npcArchetype":  "西幻男主",
+    "category":  "offline",
+    "worldId":  "aetherion"
+}

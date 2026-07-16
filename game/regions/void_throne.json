@@ -1,0 +1,15 @@
+﻿{
+    "sceneBg":  "",
+    "id":  "void_throne",
+    "defaultParticipants":  [
+
+                            ],
+    "type":  "private",
+    "description":  "黑曜石大厅中央空着魔王席。深渊维序官纪律严明，审量你是盟友还是灾厄。",
+    "themeZone":  "domination",
+    "name":  "虚空王座厅",
+    "premise":  "黑曜石大厅中央空着魔王席。深渊维序官纪律严明，审量你是盟友还是灾厄。",
+    "npcArchetype":  "西幻男主",
+    "category":  "offline",
+    "worldId":  "aetherion"
+}

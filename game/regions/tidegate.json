@@ -1,0 +1,15 @@
+﻿{
+    "sceneBg":  "",
+    "id":  "tidegate",
+    "defaultParticipants":  [
+
+                            ],
+    "type":  "private",
+    "description":  "珊瑚门扉开合。人鱼可依潮汐分化性别呈现，海水映出双生轮廓。",
+    "themeZone":  "sensory",
+    "name":  "汐门礁湾",
+    "premise":  "珊瑚门扉开合。人鱼可依潮汐分化性别呈现，海水映出双生轮廓。",
+    "npcArchetype":  "西幻男主",
+    "category":  "offline",
+    "worldId":  "aetherion"
+}

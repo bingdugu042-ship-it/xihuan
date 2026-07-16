@@ -1,0 +1,15 @@
+﻿{
+    "sceneBg":  "",
+    "id":  "drake_crag",
+    "defaultParticipants":  [
+
+                            ],
+    "type":  "private",
+    "description":  "火山岩绝壁热息扑面。强壮龙裔战士鳞光未尽，力量压过花言巧语。",
+    "themeZone":  "sensory",
+    "name":  "龙脊绝壁",
+    "premise":  "火山岩绝壁热息扑面。强壮龙裔战士鳞光未尽，力量压过花言巧语。",
+    "npcArchetype":  "西幻男主",
+    "category":  "offline",
+    "worldId":  "aetherion"
+}

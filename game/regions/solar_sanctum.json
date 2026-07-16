@@ -1,0 +1,15 @@
+﻿{
+    "sceneBg":  "",
+    "id":  "solar_sanctum",
+    "defaultParticipants":  [
+
+                            ],
+    "type":  "private",
+    "description":  "白金圣殿中廊。彩窗光刃切过石板。禁欲天使骑士在此执行维序仪轨，却对你的气场动摇。",
+    "themeZone":  "exhibition",
+    "name":  "日冕圣殿",
+    "premise":  "白金圣殿中廊。彩窗光刃切过石板。禁欲天使骑士在此执行维序仪轨，却对你的气场动摇。",
+    "npcArchetype":  "西幻男主",
+    "category":  "offline",
+    "worldId":  "aetherion"
+}

@@ -1,0 +1,15 @@
+﻿{
+    "sceneBg":  "",
+    "id":  "moonwood",
+    "defaultParticipants":  [
+
+                            ],
+    "type":  "private",
+    "description":  "月光银叶林道。俊美精灵游侠弓未离身，目光却比箭更难收。",
+    "themeZone":  "sensory",
+    "name":  "银弦月林",
+    "premise":  "月光银叶林道。俊美精灵游侠弓未离身，目光却比箭更难收。",
+    "npcArchetype":  "西幻男主",
+    "category":  "offline",
+    "worldId":  "aetherion"
+}

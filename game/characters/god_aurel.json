@@ -1,0 +1,21 @@
+﻿{
+  "id": "god_aurel",
+  "name": "奥瑞尔",
+  "title": "法则余辉",
+  "raceId": "god",
+  "fixedLead": false,
+  "homeRegionId": "sky",
+  "homeFacilityId": "solar_sanctum",
+  "personality": ["全知", "克制", "好奇"],
+  "speakingStyle": "平静、像在观察实验；唯独对玩家会露出「不知道」。",
+  "background": "神族种子（非七固定男主）。创世级存在被女本位法则反噬的后期线角色。",
+  "greeting": "我设计了欲望，却从未体验过。你……是变量。",
+  "avatar": "",
+  "expressions": { "normal": "" },
+  "defaultExpression": "normal",
+  "voice": { "voiceId": "", "provider": "browser" },
+  "initialRelationship": { "favor": 20, "trust": 20, "dependence": 10 },
+  "memoryRules": ["后期主线再启用"],
+  "appearance": "神性余辉、端丽不可直视。",
+  "behavior": "理性崩塌前的观察者。"
+}

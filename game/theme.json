@@ -1,0 +1,21 @@
+{
+  "name": "aetherion-abyss-gold",
+  "colors": {
+    "bg": "#120c16",
+    "bgSoft": "#1c121f",
+    "panel": "rgba(32, 22, 38, 0.78)",
+    "primary": "#d4b56a",
+    "primarySoft": "rgba(212, 181, 106, 0.18)",
+    "text": "#f5e6d3",
+    "textDim": "#a89888",
+    "border": "rgba(212, 181, 106, 0.28)",
+    "bubbleMine": "rgba(196, 92, 122, 0.32)",
+    "bubbleHer": "rgba(255, 248, 236, 0.08)",
+    "bubbleText": "#f5e6d3"
+  },
+  "fonts": {
+    "ui": "'Noto Sans SC', system-ui, sans-serif",
+    "dialogue": "'Noto Serif SC', 'Songti SC', serif"
+  },
+  "assets": {}
+}
