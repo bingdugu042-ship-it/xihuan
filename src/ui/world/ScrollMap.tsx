@@ -141,7 +141,9 @@ export function ScrollMap() {
   const primaryFacilityId = (region: AzeriaWorldRegion) =>
     region.facilityIds?.find((id) => regions[id]) ?? region.facilityIds?.[0]
 
-  const mapSrc = isAzeriaWorld ? '/assets/worldmap/azeria/map.png' : '/assets/worldmap/aetherion/map.png'
+  const mapSrc = isAzeriaWorld
+    ? `${import.meta.env.BASE_URL}assets/worldmap/azeria/map.png`
+    : `${import.meta.env.BASE_URL}assets/worldmap/aetherion/map.png`
   const mapAlt = isAzeriaWorld ? '艾泽利亚大陆地图' : '艾尔茜利恩大陆地图'
   const mapCaptionTitle = isAzeriaWorld ? '艾泽利亚大陆' : '艾尔茜利恩'
 

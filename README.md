@@ -29,6 +29,9 @@ npm run preview
 
 推送到 `main` 后，GitHub Actions 会发布到 `gh-pages`。
 
-Pages 地址：`https://bingdugu042-ship-it.github.io/xihuan/`
+当前已配置自定义域名（`public/CNAME`）：
 
-仓库 Settings → Pages → Source 选 `gh-pages` 分支。
+- 主站：`https://xihuan.nuanmuxing.tech/`
+- 备用：`https://bingdugu042-ship-it.github.io/xihuan/`（有自定义域时也可能跳转）
+
+请确认 DNS（CNAME → `bingdugu042-ship-it.github.io`）已生效，并在仓库 **Settings → Pages** 填好 Custom domain、勾选 HTTPS。

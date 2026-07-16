@@ -22,17 +22,22 @@ jobs:
       - name: Install & build
         run: |
           if [ -f public/CNAME ] && [ -s public/CNAME ]; then
-            echo "Custom domain detected -> base=/"
+            DOMAIN=$(tr -d '[:space:]' < public/CNAME)
+            echo "Custom domain: $DOMAIN -> base=/"
             export GITHUB_PAGES_BASE=/
           else
             echo "Project site -> base=/${{ github.event.repository.name }}/"
             export GITHUB_PAGES_BASE=/${{ github.event.repository.name }}/
           fi
+          echo "GITHUB_PAGES_BASE=$GITHUB_PAGES_BASE"
           npm ci
           npm run build
+          # 确认入口资源带正确前缀（自定义域应为 /assets/...）
+          head -n 40 dist/index.html
           cp dist/index.html dist/404.html
           touch dist/.nojekyll
-
+          # 保证 CNAME 进发布产物（Vite 会复制 public/，再保险写一次）
+          if [ -f public/CNAME ]; then cp public/CNAME dist/CNAME; fi
       - name: Publish to gh-pages branch
         uses: peaceiris/actions-gh-pages@v4
         with:
