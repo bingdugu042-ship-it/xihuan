@@ -1,11 +1,11 @@
 import { Home, Sparkles } from 'lucide-react'
 import { usePassportStore } from '@/store/passportStore'
 import { useUIStore } from '@/store/uiStore'
-import { useSessionStore } from '@/store/sessionStore'
 import { HOME_PRESETS, HOME_PRESET_MAP } from '@/data/homes'
 import { RACE_MAP } from '@/data/races'
 import { CULTIVATION_LABELS } from '@/data/cultivation'
 import { TomeSubShell } from '@/ui/shared/TomeSubShell'
+import { enterTavernStayGroup, enterTavernStayPrivate } from '@/utils/tavernStay'
 
 /** 原「家园」· 并入酒馆驻留 */
 export function TavernResidents({ onBack }: { onBack: () => void }) {
@@ -14,35 +14,41 @@ export function TavernResidents({ onBack }: { onBack: () => void }) {
   const homePresetId = usePassportStore((s) => s.homePresetId)
   const setHomePreset = usePassportStore((s) => s.setHomePreset)
   const placeBond = usePassportStore((s) => s.placeBond)
-  const bumpCultivation = usePassportStore((s) => s.bumpCultivation)
   const showToast = useUIStore((s) => s.showToast)
-  const createSession = useSessionStore((s) => s.createSession)
-  const setActiveTab = useUIStore((s) => s.setActiveTab)
 
   const preset = HOME_PRESET_MAP[homePresetId] ?? HOME_PRESETS[0]
   const residents = homeIds.map((id) => bonds[id]).filter(Boolean)
 
   const talkWith = async (characterId: string) => {
     try {
-      await createSession({
-        type: 'private',
-        regionId: 'void_throne',
-        participantIds: [characterId],
-        title: `酒馆驻留 · ${bonds[characterId]?.displayName ?? characterId}`,
-        playMode: 'home',
-        withIntro: true,
-      })
-      await bumpCultivation({ intimacy: 1 })
-      setActiveTab('chat')
-      showToast('已进入私语', preset.name)
+      await enterTavernStayPrivate(characterId)
     } catch (e) {
       showToast('无法开始对话', String(e).slice(0, 80))
     }
   }
 
+  const groupChat = async () => {
+    try {
+      await enterTavernStayGroup()
+    } catch (e) {
+      showToast('无法开始群聊', String(e).slice(0, 80))
+    }
+  }
+
   return (
     <TomeSubShell title="酒馆驻留" onBack={onBack}>
-      <p className="tome-hint mb-3">原堕神家园并入酒馆。切换氛围后与驻留对象私语，宠溺维度更易增长。</p>
+      <p className="tome-hint mb-3">
+        驻留氛围写入世界书。可私语 / 群聊；也可在地图点「冒险者酒馆」进入。
+      </p>
+      {residents.length >= 2 && (
+        <button
+          type="button"
+          className="tome-btn tome-btn--accent mb-3 w-full"
+          onClick={() => void groupChat()}
+        >
+          与驻留对象群聊（{residents.length} 人）
+        </button>
+      )}
 
       <section className="tome-card tome-card--glow">
         <div className="tome-section__title">
@@ -79,7 +85,9 @@ export function TavernResidents({ onBack }: { onBack: () => void }) {
         <div className="tome-section__title">
           <Sparkles size={14} /> 驻留对象（{residents.length}）
         </div>
-        {residents.length === 0 && <p className="tome-hint">从队伍名册将已攻略对象安置到酒馆驻留。</p>}
+        {residents.length === 0 && (
+          <p className="tome-hint">从队伍名册将已攻略对象安置到酒馆驻留。</p>
+        )}
         <ul className="tome-list">
           {residents.map((b) => (
             <li key={b.characterId} className="tome-list-item">
@@ -94,7 +102,11 @@ export function TavernResidents({ onBack }: { onBack: () => void }) {
                 <button type="button" className="tome-btn" onClick={() => void talkWith(b.characterId)}>
                   私语
                 </button>
-                <button type="button" className="tome-btn tome-btn--ghost" onClick={() => void placeBond(b.characterId, 'none')}>
+                <button
+                  type="button"
+                  className="tome-btn tome-btn--ghost"
+                  onClick={() => void placeBond(b.characterId, 'none')}
+                >
                   请离
                 </button>
               </div>

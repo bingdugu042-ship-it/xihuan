@@ -37,6 +37,15 @@ export interface CommissionJob {
 
 export type CommissionOutcome = 'success' | 'partial' | 'fail'
 
+/** 委托结算掉落物（写入背包） */
+export interface CommissionLootItem {
+  /** 对应商店物品 id；未知则按名称创建自定义道具 */
+  itemId?: string
+  name: string
+  count: number
+  desc?: string
+}
+
 export interface CommissionReport {
   commissionId: string
   title: string
@@ -44,6 +53,7 @@ export interface CommissionReport {
   outcome: CommissionOutcome
   coinsDelta: number
   staminaSpent: number
+  items?: CommissionLootItem[]
   at: number
 }
 

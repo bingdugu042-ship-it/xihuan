@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react'
-import { AlertTriangle, Briefcase, Loader2, RefreshCw } from 'lucide-react'
+import { AlertTriangle, Briefcase, Loader2, Package, RefreshCw } from 'lucide-react'
 import { useSettingsStore } from '@/store/settingsStore'
 import { useUIStore } from '@/store/uiStore'
 import { useProfileStore } from '@/store/profileStore'
 import { usePassportStore } from '@/store/passportStore'
 import { useTavernLifeStore } from '@/store/tavernLifeStore'
 import { useGeneratedStore } from '@/store/generatedStore'
+import { useShopStore } from '@/store/shopStore'
+import { useAdventureStatsStore } from '@/store/adventureStatsStore'
+import { useAzeriaProgressStore } from '@/store/azeriaProgressStore'
 import { generateCommissionBoard, resolveCommissionRun } from '@/ai/contentClient'
 import { TomeSubShell } from '@/ui/shared/TomeSubShell'
 import type { CommissionJob, CommissionReport } from '@/data/tavernLife'
@@ -29,6 +32,12 @@ export function TavernCommissions({ onBack }: { onBack: () => void }) {
   const markCommissionDone = useTavernLifeStore((s) => s.markCommissionDone)
   const setLastReport = useTavernLifeStore((s) => s.setLastReport)
   const addRecord = useGeneratedStore((s) => s.addRecord)
+  const grantItem = useShopStore((s) => s.grantItem)
+  const addCustomItem = useShopStore((s) => s.addCustomItem)
+  const getItem = useShopStore((s) => s.getItem)
+  const gainXp = useAdventureStatsStore((s) => s.gainXp)
+  const bumpReputation = useAzeriaProgressStore((s) => s.bumpReputation)
+  const unlockTitle = useAzeriaProgressStore((s) => s.unlockTitle)
 
   const [busy, setBusy] = useState(false)
   const [runningId, setRunningId] = useState<string | null>(null)
@@ -54,7 +63,7 @@ export function TavernCommissions({ onBack }: { onBack: () => void }) {
   const refresh = async (toast = true) => {
     if (busy) return
     setBusy(true)
-    if (toast) showToast('委托刷新中…', '村庄告示牌')
+    if (toast) showToast('委托刷新中…', 'AI 动态生成中')
     try {
       const jobs = await generateCommissionBoard(settings)
       setCommissions(jobs)
@@ -75,9 +84,26 @@ export function TavernCommissions({ onBack }: { onBack: () => void }) {
     setRunningId(job.id)
     setActiveCommission(job.id)
     setCommissions(commissions.map((c) => (c.id === job.id ? { ...c, status: 'accepted' } : c)))
-    showToast('接单中…', job.title)
+    showToast('接单中…', 'AI 正在演绎过程事件')
     try {
       const result = await resolveCommissionRun(settings, job, profile?.name ?? '旅者')
+      const lootNames: string[] = []
+
+      for (const loot of result.items ?? []) {
+        let itemId = loot.itemId
+        if (!itemId || !getItem(itemId)) {
+          const created = await addCustomItem({
+            name: loot.name,
+            desc: loot.desc || `委托「${job.title}」所得`,
+            price: 0,
+            category: 'souvenir',
+          })
+          itemId = created.id
+        }
+        await grantItem(itemId, loot.count)
+        lootNames.push(`${loot.name}×${loot.count}`)
+      }
+
       const rec: CommissionReport = {
         commissionId: job.id,
         title: job.title,
@@ -85,6 +111,7 @@ export function TavernCommissions({ onBack }: { onBack: () => void }) {
         outcome: result.outcome,
         coinsDelta: result.coinsDelta,
         staminaSpent: result.staminaSpent,
+        items: result.items,
         at: Date.now(),
       }
       markCommissionDone(job.id)
@@ -95,6 +122,17 @@ export function TavernCommissions({ onBack }: { onBack: () => void }) {
       }
       if (result.outcome === 'success') {
         await bumpCultivation({ allure: 1 })
+        const leveled = await gainXp(25)
+        await bumpReputation('central', 2)
+        if (leveled.leveled) {
+          showToast(`升级至 Lv.${leveled.level}`, `技能点 ${leveled.skillPoints}`)
+        }
+        // 累计成功委托可解锁轻称号（与图鉴称号墙连通）
+        const doneCount = useTavernLifeStore.getState().commissions.filter((c) => c.status === 'done').length
+        if (doneCount >= 3) await unlockTitle('commission_hand')
+      } else if (result.outcome === 'partial') {
+        await gainXp(10)
+        await bumpReputation('central', 1)
       }
       await addRecord({
         type: 'commission',
@@ -103,11 +141,18 @@ export function TavernCommissions({ onBack }: { onBack: () => void }) {
         meta: {
           coins: String(result.coinsDelta),
           outcome: result.outcome,
+          items: lootNames.join('、'),
         },
       })
       showToast(
         result.outcome === 'fail' ? '一无所获' : `结算 +${result.coinsDelta} 金`,
-        result.outcome === 'success' ? '圆满完成' : result.outcome === 'partial' ? '部分完成' : '委托失败',
+        lootNames.length
+          ? `背包 + ${lootNames.join('、')}`
+          : result.outcome === 'success'
+            ? '圆满完成'
+            : result.outcome === 'partial'
+              ? '部分完成'
+              : '委托失败',
       )
     } catch (e) {
       showToast('结算失败', e instanceof Error ? e.message : '未知错误')
@@ -121,14 +166,14 @@ export function TavernCommissions({ onBack }: { onBack: () => void }) {
       <div className="tavern-job">
         <div className="tavern-forum__toolbar">
           <div>
-            <p className="tome-hint mb-0">村庄告示牌 · 第1年·本月</p>
+            <p className="tome-hint mb-0">AI 动态告示牌 · 可刷新</p>
             <p className="tavern-job__cta">
-              <Briefcase size={14} /> 今天有什么活适合你？
+              <Briefcase size={14} /> 接单后由 AI 判定成败，金币与道具写入档案
             </p>
           </div>
           <button type="button" className="tome-btn" disabled={busy} onClick={() => void refresh(true)}>
             {busy ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-            刷新
+            刷新委托
           </button>
         </div>
 
@@ -176,7 +221,7 @@ export function TavernCommissions({ onBack }: { onBack: () => void }) {
                 onClick={() => void accept(job)}
               >
                 {runningId === job.id
-                  ? '沟通接单中…'
+                  ? 'AI 演绎中…'
                   : job.status === 'done'
                     ? '已完成'
                     : job.status === 'accepted'
@@ -189,7 +234,7 @@ export function TavernCommissions({ onBack }: { onBack: () => void }) {
       </div>
 
       {report && (
-        <div className="tavern-modal" role="dialog" aria-modal="true">
+        <div className="tavern-modal tavern-modal--center" role="dialog" aria-modal="true">
           <div className="tavern-modal__panel">
             <h3 className="tavern-modal__title">{report.title}</h3>
             <p className="tavern-modal__outcome">
@@ -201,6 +246,16 @@ export function TavernCommissions({ onBack }: { onBack: () => void }) {
               {report.coinsDelta > 0 ? ` · +${report.coinsDelta} 金` : ''}
             </p>
             <p className="tavern-modal__body">{report.narrative}</p>
+            {!!report.items?.length && (
+              <ul className="tavern-modal__loot">
+                {report.items.map((it) => (
+                  <li key={`${it.name}-${it.count}`}>
+                    <Package size={12} /> {it.name} ×{it.count}
+                    <span>已入背包</span>
+                  </li>
+                ))}
+              </ul>
+            )}
             <button type="button" className="tome-btn tome-btn--accent w-full" onClick={() => setReport(null)}>
               收下
             </button>

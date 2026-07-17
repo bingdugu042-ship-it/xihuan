@@ -29,6 +29,7 @@ export type TavernSubView =
   | 'craft'
   | 'faction'
   | 'calendar'
+  | 'festivals'
 export type AtlasSubView =
   | 'hub'
   | 'endings'

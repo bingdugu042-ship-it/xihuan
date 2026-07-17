@@ -24,6 +24,8 @@ import { useProfileStore } from './profileStore'
 import { useShopStore } from './shopStore'
 import { usePassportStore } from './passportStore'
 import { useUIStore } from './uiStore'
+import { MAIN_STORY, useAzeriaProgressStore } from './azeriaProgressStore'
+import { AZERIA_ENDINGS } from '@/data/azeriaEndings'
 import { spawnDynamicNpcForFacility, bumpDynamicNpc, corruptionStageFromValue, cardFromDynamicNpc, ensureNpcBioFields } from '@/ai/npcGenerator'
 import { draftToDynamicNpc, type SpawnedNpcDraft } from '@/ai/spawnedNpc'
 import { refineNpcWithApi } from '@/ai/npcRefine'
@@ -100,6 +102,9 @@ interface SessionStore {
     bodyStateLabels?: Partial<Record<'lower' | 'stamina' | 'mind', string>>
     /** 硬指引：本回合是否推进设施阶段 */
     guideAdvance?: boolean
+    /** 主线章节是否推进 */
+    mainAdvance?: boolean
+    endingHint?: string
     /** 对话生成的新男主 → 导入「在场」 */
     spawnedNpcs?: SpawnedNpcDraft[]
   }) => Promise<void>
@@ -643,6 +648,8 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     bodyStatDeltas,
     bodyStateLabels,
     guideAdvance,
+    mainAdvance,
+    endingHint,
     spawnedNpcs,
   }) => {
     const { activeSession } = get()
@@ -851,6 +858,58 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
         `阶段 ${stageIndex + 1}/${track.length}`,
         stage?.title ?? '剧情推进',
       )
+    }
+
+    // 主线章节 / 结局提示（AI JSON → 图鉴进度）
+    if (mainAdvance) {
+      const progress = useAzeriaProgressStore.getState()
+      const cur = progress.mainChapter ?? 1
+      if (cur < 6) {
+        const nextChapter = cur + 1
+        await progress.setMainChapter(nextChapter)
+        const chapterMeta = MAIN_STORY[nextChapter - 1]
+        const tip: ChatMessage = {
+          id: genId('msg'),
+          role: 'system',
+          bubbleStyle: 'system',
+          text: `主线推进 · 第 ${nextChapter}/6 章「${chapterMeta?.title ?? '下一章'}」`,
+          timestamp: Date.now() + 4,
+        }
+        next = {
+          ...next,
+          messages: [...next.messages, tip],
+          updatedAt: Date.now(),
+        }
+        await persist(next)
+        useUIStore.getState().showToast(
+          `主线 · 第 ${nextChapter}/6 章`,
+          chapterMeta?.title ?? '剧情推进',
+        )
+      }
+    }
+
+    if (endingHint) {
+      const ending =
+        AZERIA_ENDINGS.find((e) => e.id === endingHint) ||
+        AZERIA_ENDINGS.find((e) => e.letter.toLowerCase() === endingHint.toLowerCase()) ||
+        AZERIA_ENDINGS.find((e) => e.name.includes(endingHint))
+      if (ending) {
+        await useAzeriaProgressStore.getState().unlockEnding(ending.id)
+        const tip: ChatMessage = {
+          id: genId('msg'),
+          role: 'system',
+          bubbleStyle: 'narrator',
+          text: `旁白：命运线隐约显形——结局「${ending.letter} · ${ending.name}」已记入图鉴。`,
+          timestamp: Date.now() + 5,
+        }
+        next = {
+          ...next,
+          messages: [...next.messages, tip],
+          updatedAt: Date.now(),
+        }
+        await persist(next)
+        useUIStore.getState().showToast(`结局线 · ${ending.letter}`, ending.name)
+      }
     }
 
     // 契约：进入契约阶段，或首次进入余韵

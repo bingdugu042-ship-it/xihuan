@@ -1,17 +1,25 @@
 import { useState } from 'react'
+import { MapPin } from 'lucide-react'
 import { usePassportStore } from '@/store/passportStore'
 import { useUIStore } from '@/store/uiStore'
+import { useCustomRegionStore } from '@/store/customRegionStore'
+import { useSessionStore } from '@/store/sessionStore'
 import { RACE_MAP } from '@/data/races'
 import { PARTY_SIZE_LIMIT } from '@/data/homes'
 import { FACILITIES } from '@/data/facilities'
 import { TomeSubShell } from '@/ui/shared/TomeSubShell'
 
+/** 出发冒险：点选目标域直接跳转设施详情/游玩（与地图一致） */
 export function TavernDeparture({ onBack }: { onBack: () => void }) {
   const bonds = usePassportStore((s) => s.bonds)
   const partyIds = usePassportStore((s) => s.partyIds)
   const placeBond = usePassportStore((s) => s.placeBond)
   const showToast = useUIStore((s) => s.showToast)
   const openFacilityPlayPage = useUIStore((s) => s.openFacilityPlayPage)
+  const setActiveTab = useUIStore((s) => s.setActiveTab)
+  const setSelectedRegionId = useUIStore((s) => s.setSelectedRegionId)
+  const customRegions = useCustomRegionStore((s) => s.regions)
+  const createSession = useSessionStore((s) => s.createSession)
   const [targetRegion, setTargetRegion] = useState(FACILITIES[0]?.id ?? '')
 
   const conquered = Object.values(bonds).filter((b) => b.status === 'conquered')
@@ -31,19 +39,47 @@ export function TavernDeparture({ onBack }: { onBack: () => void }) {
     if (!res.ok) showToast('无法编入', res.reason ?? '')
   }
 
+  const jumpTo = async (regionId: string, name: string) => {
+    setTargetRegion(regionId)
+    setSelectedRegionId(regionId)
+    const custom = customRegions.find((r) => r.id === regionId)
+    if (custom) {
+      const participants =
+        partyIds.length > 0
+          ? partyIds
+          : custom.defaultParticipants.length
+            ? custom.defaultParticipants
+            : []
+      await createSession({
+        type: custom.type,
+        regionId: custom.id,
+        participantIds: participants,
+        title: `自定义地点 · ${custom.name}`,
+        playMode: '自由游玩',
+        withIntro: true,
+      })
+      setActiveTab('chat')
+      showToast('进入自定义地点', 'AI 已读取地点世界书')
+      return
+    }
+    openFacilityPlayPage(regionId)
+    showToast('出征', `前往 ${name}`)
+  }
+
   const depart = () => {
     if (!targetRegion) return
     if (party.length === 0) {
       showToast('建议带至少一名同行者', '规则书：伴侣同行可获魅力判定优势')
     }
-    openFacilityPlayPage(targetRegion)
-    showToast('出征', `前往 ${FACILITIES.find((f) => f.id === targetRegion)?.name ?? targetRegion}`)
+    const fac = FACILITIES.find((f) => f.id === targetRegion)
+    const custom = customRegions.find((r) => r.id === targetRegion)
+    jumpTo(targetRegion, fac?.name ?? custom?.name ?? targetRegion)
   }
 
   return (
     <TomeSubShell title="出发冒险" onBack={onBack}>
       <p className="tome-hint mb-3">
-        选择同行伴侣/仆从（上限 {PARTY_SIZE_LIMIT}），再选定目标冒险域。好感≥70 的伴侣在旁时魅力判定获优势。
+        选择同行者后，直接点击目标冒险域即可跳转（等同地图详情进入）。自定义地点也会列出。
       </p>
 
       <section className="tome-section">
@@ -55,7 +91,8 @@ export function TavernDeparture({ onBack }: { onBack: () => void }) {
               <div>
                 <div className="tome-list-item__name">{b.displayName}</div>
                 <div className="tome-list-item__meta">
-                  {b.role === 'servant' ? '仆从' : '伴侣'} · {RACE_MAP[b.raceId as keyof typeof RACE_MAP]?.name ?? b.raceId}
+                  {b.role === 'servant' ? '仆从' : '伴侣'} ·{' '}
+                  {RACE_MAP[b.raceId as keyof typeof RACE_MAP]?.name ?? b.raceId}
                 </div>
               </div>
               <button type="button" className="tome-btn" onClick={() => void toggleParty(b.characterId)}>
@@ -79,7 +116,11 @@ export function TavernDeparture({ onBack }: { onBack: () => void }) {
                     {RACE_MAP[b.raceId as keyof typeof RACE_MAP]?.name ?? b.raceId}
                   </div>
                 </div>
-                <button type="button" className="tome-btn tome-btn--accent" onClick={() => void toggleParty(b.characterId)}>
+                <button
+                  type="button"
+                  className="tome-btn tome-btn--accent"
+                  onClick={() => void toggleParty(b.characterId)}
+                >
                   编入
                 </button>
               </li>
@@ -88,24 +129,43 @@ export function TavernDeparture({ onBack }: { onBack: () => void }) {
       </section>
 
       <section className="tome-section">
-        <div className="tome-section__title">目标冒险域</div>
+        <div className="tome-section__title">
+          <MapPin size={14} /> 目标冒险域 · 点击直达
+        </div>
         <div className="tome-grid-2">
           {FACILITIES.map((f) => (
             <button
               key={f.id}
               type="button"
               className={`tome-card text-left ${targetRegion === f.id ? 'tome-card--glow' : ''}`}
-              onClick={() => setTargetRegion(f.id)}
+              onClick={() => void jumpTo(f.id, f.name)}
             >
               <div className="text-sm font-medium">{f.name}</div>
               <div className="tome-list-item__meta mt-1">{f.tagline}</div>
+              <div className="mt-2 text-[10px]" style={{ color: 'var(--c-gold)' }}>
+                点击进入 · 同地图详情
+              </div>
+            </button>
+          ))}
+          {customRegions.map((r) => (
+            <button
+              key={r.id}
+              type="button"
+              className={`tome-card text-left ${targetRegion === r.id ? 'tome-card--glow' : ''}`}
+              onClick={() => void jumpTo(r.id, r.name)}
+            >
+              <div className="text-sm font-medium">{r.name}</div>
+              <div className="tome-list-item__meta mt-1">{r.mapNote || r.premise}</div>
+              <div className="mt-2 text-[10px]" style={{ color: 'var(--c-accent)' }}>
+                自定义地点
+              </div>
             </button>
           ))}
         </div>
       </section>
 
       <button type="button" className="tome-btn tome-btn--accent mt-2 w-full py-3 text-center" onClick={depart}>
-        确认出征
+        确认出征当前选中
       </button>
     </TomeSubShell>
   )

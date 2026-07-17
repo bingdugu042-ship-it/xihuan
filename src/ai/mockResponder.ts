@@ -87,6 +87,10 @@ export interface MockAIResult {
   bodyStatDeltas?: Record<string, number>
   bodyStateLabels?: Partial<Record<'lower' | 'stamina' | 'mind', string>>
   guideAdvance?: boolean
+  /** 主线章节推进建议 */
+  mainAdvance?: boolean
+  /** 结局判定建议 id（仅终章） */
+  endingHint?: string
   /** 对话中生成的新男主，写入「在场」条 */
   spawnedNpcs?: import('./spawnedNpc').SpawnedNpcDraft[]
 }

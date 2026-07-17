@@ -34,6 +34,8 @@ interface ProgressData {
   acceptedQuestIds: string[]
   anniversaries: AnniversaryRecord[]
   challengeLog: string[]
+  /** 已解锁/触及的结局 id（ending_a…） */
+  unlockedEndings: string[]
 }
 
 interface ProgressStore extends ProgressData {
@@ -52,6 +54,7 @@ interface ProgressStore extends ProgressData {
   acceptQuest: (id: string) => Promise<void>
   addAnniversary: (rec: AnniversaryRecord) => Promise<void>
   pushChallengeLog: (line: string) => Promise<void>
+  unlockEnding: (id: string) => Promise<void>
 }
 
 export const DEFAULT_TITLES = [
@@ -59,6 +62,7 @@ export const DEFAULT_TITLES = [
   { id: 'heaven_taboo', name: '天界禁忌', condition: '攻略一名天使伴侣' },
   { id: 'mermaid_darling', name: '人鱼宠儿', condition: '与人鱼伴侣好感 100' },
   { id: 'law_itself', name: '法则本身', condition: '攻略全部八种族王级伴侣' },
+  { id: 'commission_hand', name: '告示牌熟手', condition: '完成 3 次酒馆委托会差事' },
 ]
 
 export const MAIN_STORY = [
@@ -109,6 +113,7 @@ function snapshot(get: () => ProgressStore): ProgressData {
     acceptedQuestIds: s.acceptedQuestIds,
     anniversaries: s.anniversaries,
     challengeLog: s.challengeLog,
+    unlockedEndings: s.unlockedEndings,
   }
 }
 
@@ -131,6 +136,7 @@ export const useAzeriaProgressStore = create<ProgressStore>((set, get) => ({
   acceptedQuestIds: [],
   anniversaries: [],
   challengeLog: [],
+  unlockedEndings: [],
   loaded: false,
 
   load: async () => {
@@ -149,6 +155,7 @@ export const useAzeriaProgressStore = create<ProgressStore>((set, get) => ({
           acceptedQuestIds: data.acceptedQuestIds ?? [],
           anniversaries: data.anniversaries ?? [],
           challengeLog: data.challengeLog ?? [],
+          unlockedEndings: data.unlockedEndings ?? [],
           loaded: true,
         })
         return
@@ -238,6 +245,13 @@ export const useAzeriaProgressStore = create<ProgressStore>((set, get) => ({
   pushChallengeLog: async (line) => {
     const challengeLog = [line, ...get().challengeLog].slice(0, 40)
     set({ challengeLog })
+    persist(snapshot(get))
+  },
+
+  unlockEnding: async (id) => {
+    if (!id || get().unlockedEndings.includes(id)) return
+    const unlockedEndings = [...get().unlockedEndings, id]
+    set({ unlockedEndings })
     persist(snapshot(get))
   },
 }))

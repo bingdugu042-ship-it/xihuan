@@ -6,10 +6,12 @@ import { getFacilityLore } from '@/data/facilityLore'
 import { getFacilityWorldbook } from '@/data/facilityWorldbook'
 import { facilityAssetPath } from '@/data/facilityHandbook'
 import { resolveIdentityRoles } from '@/data/identityRoles'
+import { getLeadIdsForFacility } from '@/data/regionalLeads'
 import { useUIStore } from '@/store/uiStore'
 import { useSessionStore } from '@/store/sessionStore'
 import { useDataStore } from '@/store/dataStore'
 import { usePassportStore } from '@/store/passportStore'
+import { getCharacterImageCandidates, characterPlaceholder } from '@/utils/image'
 import type { FacilityDef } from '@/data/facilities'
 
 interface FacilityPlayPageProps {
@@ -30,7 +32,7 @@ export function FacilityPlayPage({ facility: propFacility, onClose }: FacilityPl
     setActiveTab,
   } = useUIStore()
   const createSession = useSessionStore((s) => s.createSession)
-  const { regions } = useDataStore()
+  const { regions, characters, runtimeCharacters } = useDataStore()
   const hasStamp = usePassportStore((s) => s.hasStamp)
 
   const facility = useMemo(
@@ -40,6 +42,18 @@ export function FacilityPlayPage({ facility: propFacility, onClose }: FacilityPl
 
   const [tearing, setTearing] = useState(false)
   const [selectedPlayMode, setSelectedPlayMode] = useState<string | null>(null)
+
+  const allChars = useMemo(
+    () => ({ ...characters, ...runtimeCharacters }),
+    [characters, runtimeCharacters],
+  )
+
+  const leadChars = useMemo(() => {
+    if (!facility) return []
+    return getLeadIdsForFacility(facility.id)
+      .map((id) => allChars[id])
+      .filter(Boolean)
+  }, [facility, allChars])
 
   const counterpartHint = useMemo(() => {
     if (!facility || !selectedIdentityId) return null
@@ -65,10 +79,10 @@ export function FacilityPlayPage({ facility: propFacility, onClose }: FacilityPl
     setFacilityPageStage('entering')
     setTearing(true)
     await new Promise((r) => setTimeout(r, 600))
-    const { buildFreeRoamParticipants, freeRoamSessionTitle } = await import('@/utils/freeRoamParty')
+    const { buildFreeRoamParticipants, buildGuidedParticipants, freeRoamSessionTitle } = await import('@/utils/freeRoamParty')
     const pids = freeRoam
       ? buildFreeRoamParticipants(facility.id)
-      : region.defaultParticipants ?? []
+      : buildGuidedParticipants(facility.id)
     await createSession({
       regionId: facility.id,
       participantIds: pids,
@@ -126,6 +140,30 @@ export function FacilityPlayPage({ facility: propFacility, onClose }: FacilityPl
         >
           {zone.name}
         </span>
+
+        {leadChars.length > 0 && (
+          <div className="facility-play-card__leads">
+            <p className="facility-play-card__section-label">域内主角 · 预设立绘</p>
+            <p className="facility-play-card__leads-hint">
+              固定驻场；聊天背景为透明毛玻璃，能透出立绘。其余空位由 AI 动态生成。
+            </p>
+            <div className="facility-play-card__leads-row">
+              {leadChars.map((c) => {
+                const src =
+                  getCharacterImageCandidates(c)[0] ?? characterPlaceholder(c.name, c.id)
+                return (
+                  <div key={c.id} className="facility-play-card__lead">
+                    <img src={src} alt="" />
+                    <div>
+                      <strong>{c.name}</strong>
+                      <span>{c.title}</span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="facility-play-card__lore">
           <div className="facility-play-card__lore-thumb">

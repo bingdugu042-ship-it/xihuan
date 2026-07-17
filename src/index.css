@@ -282,12 +282,13 @@ body {
   padding: 4px 0;
 }
 
-/* ?????????????? overlay ??? dvh ?? */
+/* 移动端铺满，顶栏用 safe-area，避免多余 4px 造成错位 */
 .viewport-host--mobile {
   height: 100vh;
   height: -webkit-fill-available;
   min-height: 100vh;
   min-height: 100lvh;
+  padding: 0;
 }
 
 /* ??????????????????????? */
@@ -1047,6 +1048,106 @@ html.mobile-keyboard-open .viewport-host--mobile .viewport-scaler {
 .chat-bg-scrim {
   background: var(--immerse-scrim) !important;
   opacity: 1 !important;
+}
+
+/* —— 预设立绘：透明毛玻璃，立绘清晰可见 —— */
+.chat-bg-root--lead .chat-bg-portrait--lead {
+  filter: saturate(1.05) contrast(1.02);
+  transform-origin: top center;
+}
+
+.chat-bg-root--lead .chat-bg-frost {
+  background: linear-gradient(
+    180deg,
+    rgba(18, 12, 9, 0.18) 0%,
+    rgba(18, 12, 9, 0.08) 35%,
+    rgba(18, 12, 9, 0.35) 72%,
+    rgba(12, 8, 6, 0.55) 100%
+  );
+  backdrop-filter: blur(10px) saturate(120%);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+}
+
+.chat-bg-root--lead .chat-bg-scrim {
+  background: linear-gradient(
+    90deg,
+    rgba(12, 8, 6, 0.22) 0%,
+    transparent 28%,
+    transparent 72%,
+    rgba(12, 8, 6, 0.28) 100%
+  ) !important;
+  opacity: 1 !important;
+}
+
+.chat-bg-root--lead .chat-bg-veil {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    transparent 42%,
+    rgba(12, 8, 6, 0.45) 78%,
+    rgba(8, 5, 4, 0.72) 100%
+  ) !important;
+  opacity: 1 !important;
+}
+
+/* 动态 NPC：更重雾面，弱化无立绘/占位图 */
+.chat-bg-root--dynamic .chat-bg-frost {
+  background: rgba(14, 10, 8, 0.35);
+  backdrop-filter: blur(14px) saturate(110%);
+  -webkit-backdrop-filter: blur(14px) saturate(110%);
+}
+
+.chat-bg-fallback {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 20%, rgba(201, 163, 90, 0.18), transparent 60%),
+    linear-gradient(165deg, #1a120e 0%, #0e0a08 100%);
+}
+
+.chat-bg-lead-badge {
+  position: absolute;
+  left: 12px;
+  top: max(10px, env(safe-area-inset-top, 0px));
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(24, 16, 12, 0.42);
+  border: 1px solid rgba(232, 200, 120, 0.35);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  color: #fff8ee;
+  pointer-events: none;
+}
+
+.chat-bg-lead-badge span {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: #e8c878;
+  text-transform: uppercase;
+}
+
+.chat-bg-lead-badge strong {
+  font-size: 13px;
+  font-family: var(--font-dialogue), 'Cinzel', serif;
+  font-weight: 700;
+}
+
+/* 沉浸气泡毛玻璃：透出立绘 */
+.chat-immersive .bubble-glass,
+.chat-immersive [data-bubble='character'] {
+  background: color-mix(in srgb, var(--c-bubble-her, rgba(40, 28, 20, 0.72)) 78%, transparent) !important;
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid rgba(232, 200, 120, 0.18);
+}
+
+.chat-immersive .cockpit-status,
+.chat-immersive .chat-header:not(.chat-header--preview) {
+  background: color-mix(in srgb, var(--immerse-chrome-strong, rgba(18, 12, 9, 0.88)) 82%, transparent) !important;
+  backdrop-filter: blur(16px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(150%) !important;
 }
 
 @media (pointer: coarse) and (max-width: 768px) {
@@ -1998,8 +2099,9 @@ html.mobile-keyboard-open .viewport-host--mobile .viewport-scaler {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 58px;
-  padding: 0 18px;
+  box-sizing: border-box;
+  height: calc(58px + env(safe-area-inset-top, 0px));
+  padding: env(safe-area-inset-top, 0px) 18px 0;
   flex-shrink: 0;
   background:
     linear-gradient(180deg, rgba(24, 16, 12, 0.95) 0%, rgba(18, 12, 9, 0.85) 60%, rgba(14, 10, 8, 0.75) 100%);
@@ -2008,6 +2110,13 @@ html.mobile-keyboard-open .viewport-host--mobile .viewport-scaler {
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   font-family: 'Cinzel', 'Noto Serif SC', serif;
+}
+
+/* 沉浸页隐藏卷轴顶栏时，Chat Header 承接刘海安全区 */
+.tome-shell--chat-immerse .chat-header {
+  box-sizing: border-box;
+  height: calc(var(--header-height) + env(safe-area-inset-top, 0px)) !important;
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 /* ???????? */
@@ -2580,6 +2689,48 @@ html.mobile-keyboard-open .viewport-host--mobile .viewport-scaler {
   transform: scale(0.99);
 }
 
+.scroll-map__tools {
+  position: absolute;
+  z-index: 30;
+  top: calc(10px + env(safe-area-inset-top, 0px));
+  right: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+  max-width: calc(100% - 20px);
+  pointer-events: none;
+}
+
+.scroll-map__tool-btn {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(201, 163, 90, 0.45);
+  background: rgba(18, 12, 9, 0.82);
+  color: #fff8ee;
+  font-size: 12px;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.scroll-map__tool-btn--tavern {
+  border-color: rgba(212, 165, 116, 0.55);
+  background: color-mix(in srgb, #d4a574 22%, rgba(18, 12, 9, 0.85));
+}
+
+.azeria-pin--tavern .azeria-pin__ring--tavern {
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--pin-hue, #d4a574) 42%, rgba(18, 12, 9, 0.88));
+  color: #fff8ee;
+}
+
 .scroll-cover__rod,
 .scroll-map__rod {
   position: relative;
@@ -2846,6 +2997,17 @@ html.mobile-keyboard-open .viewport-host--mobile .viewport-scaler {
   font-size: 11px;
   color: var(--pin-hue, #e8c878);
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+
+.azeria-pin--custom .azeria-pin__ring--custom {
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--pin-hue, #c9a35a) 35%, rgba(18, 12, 9, 0.85));
+  color: #fff8ee;
+}
+
+.azeria-pin--custom .azeria-pin__label {
+  border-style: dashed;
 }
 
 .azeria-pin--locked {
@@ -3505,6 +3667,64 @@ html.mobile-keyboard-open .viewport-host--mobile .viewport-scaler {
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(90, 66, 24, 0.32);
   color: #0f0d0a;
+}
+
+.facility-play-card__zone {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 16px 10px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.facility-play-card__leads {
+  margin: 0 16px 14px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(90, 66, 24, 0.22);
+  background: rgba(201, 163, 90, 0.12);
+}
+
+.facility-play-card__leads-hint {
+  margin: 0 0 10px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: rgba(40, 30, 16, 0.65);
+}
+
+.facility-play-card__leads-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.facility-play-card__lead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.facility-play-card__lead img {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px solid rgba(90, 66, 24, 0.28);
+}
+
+.facility-play-card__lead strong {
+  display: block;
+  font-size: 13px;
+  color: #1a140e;
+}
+
+.facility-play-card__lead span {
+  display: block;
+  font-size: 11px;
+  color: rgba(40, 30, 16, 0.62);
 }
 
 .facility-play-card__footer {
@@ -4290,6 +4510,129 @@ html.mobile-keyboard-open .viewport-host--mobile .viewport-scaler {
   color: var(--immerse-ink, #fff8ee);
 }
 
+.cockpit-status--folded {
+  padding-bottom: 8px;
+}
+
+/* 整块驾驶舱向上折叠 */
+.cockpit-chrome-fold__bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 34px;
+  padding: 4px 2px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.cockpit-chrome-fold__summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+  font-size: 11px;
+  color: var(--immerse-ink-dim, #e8dcc8);
+  overflow: hidden;
+}
+
+.cockpit-chrome-fold__mode {
+  flex-shrink: 0;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--immerse-chrome-border, rgba(232, 200, 120, 0.35));
+  background: color-mix(in srgb, var(--c-gold, #e8c878) 14%, transparent);
+  color: var(--c-gold, #e8c878);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.cockpit-chrome-fold__chev {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+  color: var(--immerse-ink-dim, #e8dcc8);
+  /* 收起时箭头朝下＝可展开；展开时朝上＝可收起 */
+  transform: rotate(0deg);
+}
+
+.cockpit-chrome-fold__chev.is-open {
+  transform: rotate(180deg);
+}
+
+.cockpit-chrome-fold__body {
+  overflow: hidden;
+  padding-top: 4px;
+}
+
+/* 在场 / 进度 折叠行 */
+.cockpit-fold {
+  margin-top: 6px;
+}
+
+.cockpit-fold__toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 32px;
+  padding: 5px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--immerse-chrome-border, rgba(232, 200, 120, 0.28));
+  background: color-mix(in srgb, var(--c-gold, #e8c878) 10%, transparent);
+  color: var(--immerse-ink, #fff8ee);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+
+.cockpit-fold__title {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cockpit-fold__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--c-gold, #e8c878);
+  opacity: 0.9;
+}
+
+.cockpit-fold__chev {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+  color: var(--immerse-ink-dim, #e8dcc8);
+  transform: rotate(-90deg);
+}
+
+.cockpit-fold__chev.is-open {
+  transform: rotate(0deg);
+}
+
+.cockpit-fold__body {
+  overflow: hidden;
+}
+
+.cockpit-fold__body .cockpit-status__npc {
+  margin-top: 4px;
+}
+
+.cockpit-fold__body .guide-progress,
+.cockpit-fold__body .cockpit-guide {
+  margin-top: 4px;
+}
+
 .cockpit-status--compact {
   padding: 6px 12px;
 }
@@ -4531,6 +4874,18 @@ html.mobile-keyboard-open .viewport-host--mobile .viewport-scaler {
   font-size: 10px;
   color: var(--c-gold, #e8c878);
   font-weight: 700;
+}
+
+.party-strip__chip--lead {
+  border-color: color-mix(in srgb, var(--c-gold, #e8c878) 55%, transparent);
+}
+
+.party-strip__lead {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--c-gold, #e8c878);
+  opacity: 0.9;
 }
 
 .action-dock {
@@ -5113,6 +5468,18 @@ html.mobile-keyboard-open .viewport-host--mobile .viewport-scaler {
   padding: 16px;
 }
 
+/* 委托结算：居中浮层（相对地图/酒馆内容） */
+.tavern-modal--center {
+  align-items: center;
+  padding: max(16px, env(safe-area-inset-top, 0px)) 16px
+    max(16px, env(safe-area-inset-bottom, 0px));
+}
+
+.tavern-modal--center .tavern-modal__panel {
+  border-radius: 16px;
+  max-height: min(72vh, 560px);
+}
+
 .tavern-modal__panel {
   position: relative;
   width: 100%;
@@ -5124,6 +5491,33 @@ html.mobile-keyboard-open .viewport-host--mobile .viewport-scaler {
   background: linear-gradient(180deg, #2a1c14 0%, #17100a 100%);
   border: 1px solid rgba(232, 200, 120, 0.35);
   color: #fff8ee;
+}
+
+.tavern-modal__loot {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tavern-modal__loot li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(232, 200, 120, 0.1);
+  border: 1px solid rgba(232, 200, 120, 0.25);
+  font-size: 12px;
+  color: #fff8ee;
+}
+
+.tavern-modal__loot li span {
+  margin-left: auto;
+  font-size: 10px;
+  color: #e8c878;
 }
 
 .tavern-modal__close {

@@ -21,6 +21,7 @@ import {
   TavernFaction,
   TavernCalendar,
 } from '@/ui/tavern/TavernMorePanels'
+import { TavernFestivals } from '@/ui/tavern/TavernFestivals'
 
 export function TavernTab() {
   const sub = useUIStore((s) => s.tavernSubView)
@@ -73,6 +74,8 @@ export function TavernTab() {
       return <TavernFaction onBack={back} />
     case 'calendar':
       return <TavernCalendar onBack={back} />
+    case 'festivals':
+      return <TavernFestivals onBack={back} />
     default:
       return <TavernHub onNavigate={setTavernSubView} />
   }

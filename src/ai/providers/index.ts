@@ -42,22 +42,55 @@ export async function testApiConnection(
   try {
     if (!apiKey.trim()) return { ok: false, message: '请先填写 API Key' }
     const adapter = resolveProvider(baseURL, model)
-    const models = await adapter.fetchModels(baseURL, apiKey, proxyURL)
     const providerLabel = getProviderLabel(adapter.kind)
-    if (models.length === 0) {
+    const models = await adapter.fetchModels(baseURL, apiKey, proxyURL)
+
+    // 有模型名时再做一次极短 chat 探测，避免「能拉模型列表但聊天失败」
+    const pingModel = (model?.trim() || models[0] || '').trim()
+    if (pingModel) {
+      try {
+        await adapter.chatCompletion({
+          baseURL,
+          apiKey,
+          model: pingModel,
+          proxyURL,
+          temperature: 0,
+          maxTokens: 8,
+          retries: 0,
+          messages: [{ role: 'user', content: 'ping' }],
+        })
+      } catch (chatErr) {
+        const detail = chatErr instanceof Error ? chatErr.message : '聊天探测失败'
+        return {
+          ok: false,
+          message: `模型列表可达，但聊天失败（${providerLabel}）：${detail}`,
+          provider: adapter.kind,
+        }
+      }
+    }
+
+    if (models.length === 0 && !pingModel) {
       return { ok: false, message: `连接成功（${providerLabel}）但未返回模型`, provider: adapter.kind }
     }
-    if (model && models.includes(model)) {
-      return { ok: true, message: `连接成功 · ${providerLabel} · 已选模型 ${model}`, provider: adapter.kind }
+    if (model && models.length > 0 && models.includes(model)) {
+      return {
+        ok: true,
+        message: `联通成功 · ${providerLabel} · 聊天探测通过 · ${model}`,
+        provider: adapter.kind,
+      }
     }
     if (model) {
       return {
         ok: true,
-        message: `连接成功 · ${providerLabel} · 当前模型不在列表中（共 ${models.length} 个）`,
+        message: `联通成功 · ${providerLabel} · 聊天探测通过（模型列表 ${models.length || '未知'}）`,
         provider: adapter.kind,
       }
     }
-    return { ok: true, message: `连接成功 · ${providerLabel} · 共 ${models.length} 个模型`, provider: adapter.kind }
+    return {
+      ok: true,
+      message: `联通成功 · ${providerLabel} · 共 ${models.length} 个模型`,
+      provider: adapter.kind,
+    }
   } catch (e) {
     return { ok: false, message: e instanceof Error ? e.message : '连接失败' }
   }

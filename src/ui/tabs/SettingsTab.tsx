@@ -1019,7 +1019,7 @@ function ApiConnectivityCard() {
     },
     ready: {
       label: '待测连',
-      tip: '密钥已填好，点「测试连接」后才视为稳定联通',
+      tip: '密钥已填好：未测连也会直连真实 API；手机网页请填 CORS 代理（本地开发可填 /cors-proxy）',
       color: '#f0c34a',
       Icon: CircleDot,
     },
@@ -1221,8 +1221,13 @@ function ApiConnectivityCard() {
               <TextInput
                 value={proxyURL ?? ''}
                 onChange={(e) => updateApi({ proxyURL: e.target.value })}
-                placeholder="浏览器跨域时填代理地址"
+                placeholder="本地开发填 /cors-proxy；手机跨域必填"
               />
+              <p className="mt-1 text-[10px]" style={{ color: 'var(--c-text-dim)' }}>
+                手机浏览器直连多数 AI API 会被跨域拦截。本地 `npm run dev` 时可填
+                <code className="mx-0.5">/cors-proxy</code>
+                ；线上需自备 HTTPS 代理。
+              </p>
             </div>
             {modelError && (
               <p className="text-[11px] leading-relaxed" style={{ color: '#e57373' }}>

@@ -193,6 +193,7 @@ export function Bubble({ message, showName, onAvatarClick, lockedCharId }: Bubbl
             className={`bubble-body relative px-3.5 py-2 text-[14px] leading-relaxed ${
               isCentered ? 'w-full text-left' : 'w-fit max-w-full'
             } ${isNarrator ? 'bubble-body--narrator' : ''} ${isUser ? 'bubble-body--mine' : ''}`}
+            data-bubble={isCharacter ? 'character' : isUser ? 'user' : isNarrator ? 'narrator' : 'system'}
             style={{
               fontFamily: 'var(--font-dialogue)',
               color: bubbleColor,

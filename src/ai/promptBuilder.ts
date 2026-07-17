@@ -19,9 +19,12 @@ import {
 } from './aiParams'
 
 import { buildWesternPromptExtras } from './westernPrompt'
+import { buildGlobalWorldContext } from './worldContext'
 import { formatAtmosphereTurnReminder, resolveIdentityRoles } from '@/data/identityRoles'
 import { isSandboxChat } from './azeriaPrompt'
 import { spawnHintForPrompt } from './spawnedNpc'
+import { getLeadIdsForFacility, isPresetLeadCharacter } from '@/data/regionalLeads'
+import { buildTravelerCardBlock, prefixTravelerUtterance } from './travelerCard'
 
 export {
   buildAiBehaviorHints,
@@ -129,14 +132,9 @@ export function buildSystemPrompt(params: {
   }
 
   if (userProfile) {
-    parts.push(
-      '',
-      '## 旅者人设档案（不是域内对位身份）',
-      `姓名：${userProfile.name} · ${userProfile.age} · ${userProfile.gender}`,
-      `人设：${clip(userProfile.persona || '未设定', 200)}`,
-      `环境：${clip(userProfile.livingEnvironment || '—', 120)}`,
-      '注意：上方是玩家人物卡；冒险域内的身份对位见后文「身份视角锁定」。',
-    )
+    parts.push('', buildTravelerCardBlock(userProfile))
+  } else {
+    parts.push('', buildTravelerCardBlock(null))
   }
 
   const prefsBlock = formatPlayerPreferences(playerPreferences ?? settings.ui.playerPreferences)
@@ -154,11 +152,29 @@ export function buildSystemPrompt(params: {
     )
   }
 
+  // 节日 / 驻留 / 主线 / 自定义地点 → 全体 NPC 遵从
+  const globalCtx = buildGlobalWorldContext(region)
+  if (globalCtx) parts.push('', globalCtx)
+
+  const facilityLeads = getLeadIdsForFacility(session.regionId)
+  if (facilityLeads.length) {
+    parts.push(
+      '',
+      '## 本域预设立绘主角',
+      `固定驻场 id：${facilityLeads.join(' / ')}。他们是本域「域内主角」，立绘已写入游戏资源；其余空位才用 AI 动态男主填充。`,
+      '不要把动态 NPC 写成官方立绘卡面，也不要替换/抹掉域内主角。',
+    )
+  }
+
   parts.push('', '## 参与角色（仅 NPC / 男主；不是用户）')
   for (const c of characters) {
     const roles = resolveIdentityRoles(session.regionId, session.playerIdentityId)
     const npcRoleTag = roles ? `本场域内身份：${roles.npc.name}（不可变成用户的「${roles.player.name}」）` : ''
+    const leadTag = isPresetLeadCharacter(c.id)
+      ? '【域内主角·预设立绘】固定驻场，外貌/性格以卡面为准；背景立绘可见。'
+      : '【动态男主】可由 AI 生成/召唤；无固定立绘时勿编造官方卡面外貌。'
     parts.push(formatCharacterBlock(c, session.relationships[c.id]))
+    parts.push(leadTag)
     if (npcRoleTag) parts.push(npcRoleTag)
     parts.push('')
   }
@@ -248,6 +264,9 @@ export function buildSystemPrompt(params: {
       '  "choices": [],',
       '  "relationshipChange": {"favor":0,"trust":0,"dependence":0},',
       '  "memoryEvent": null,',
+      '  "guideAdvance": false,',
+      '  "mainAdvance": false,',
+      '  "endingHint": null,',
       '  "npcDesire": "REQUIRED · what he wants right now (1 short line, THIS beat)",',
       '  "npcInnerThought": "REQUIRED · private thought (1 short line, THIS beat)",',
       '  "npcBodyState": "REQUIRED · body / breath / posture (1 short line, THIS beat)",',
@@ -255,7 +274,8 @@ export function buildSystemPrompt(params: {
       '}',
       'REQUIRED every turn: npcDesire + npcInnerThought + npcBodyState. They power the live status bar — must change with the dialogue, never repeat opening boilerplate.',
       'When traveler asks to generate/summon NPCs: fill spawnedNpcs (array of {name,title,appearance,personality,background,desire,innerThought,bodyState}); otherwise [].',
-      'Omit npcCorruptionDelta / bodyStatDeltas / guideAdvance / hPhase unless relevant.',
+      'Omit npcCorruptionDelta / bodyStatDeltas / guideAdvance / mainAdvance / endingHint / hPhase unless relevant.',
+      'When chapter condition is clearly met, set mainAdvance=true (once). On finale only, endingHint may be ending id like ending_a.',
       'Never prefix "text" with speaker labels like「Name：」.',
       isGroup
         ? forceCharacterId
@@ -281,6 +301,8 @@ export function buildSystemPrompt(params: {
       '  "memoryEvent": null 或 {"type":"daily|milestone|conflict|secret|preference|facility|npc_bond","text":"值得长期记住的事"}',
       '  "hPhase": "idle|foreplay|main|climax|afterglow",',
       '  "guideAdvance": false,',
+      '  "mainAdvance": false,',
+      '  "endingHint": null,',
       '  "npcDesire": "男主此刻欲望（必填，1短句，须随本回合变化）",',
       '  "npcInnerThought": "男主内心独白（必填，1短句，须随本回合变化）",',
       '  "npcBodyState": "男主身体状态（必填，1短句，须随本回合变化）",',
@@ -290,9 +312,11 @@ export function buildSystemPrompt(params: {
       '  "spawnedNpcs": []',
       '}',
       '严禁在 text 内写发言人前缀。',
+      '严禁用旅者第一人称写 text；text 只能是男主/NPC 视角。',
       '每回合必须重写 npcDesire / npcInnerThought / npcBodyState，反映本拍欲望与身体变化；禁止复读入场开场套话。',
       '旅者要求生成/召唤男主时：必须填 spawnedNpcs（[{name,title,appearance,personality,background,desire,innerThought,bodyState},…]）；否则填 []。',
       '硬指引模式下：阶段目标完成时 guideAdvance=true。',
+      '主线条件明显满足时：mainAdvance=true（每章最多一次）；终章才可填 endingHint（如 ending_a）。',
       isGroup
         ? isInterrupt && forceCharacterId
           ? `群聊争宠抢话：characterId 固定为 ${forceCharacterId}。`
@@ -349,8 +373,9 @@ export function buildChatMessages(params: {
   session: Session
   characters: Record<string, CharacterCard>
   aiContextLength: number
+  userProfile?: UserProfile | null
 }): ChatCompletionMessage[] {
-  const { systemPrompt, session, characters, aiContextLength } = params
+  const { systemPrompt, session, characters, aiContextLength, userProfile } = params
   const historyLimit = getContextMessageCount(aiContextLength)
   const roles = resolveIdentityRoles(session.regionId, session.playerIdentityId)
   const atmosphereReminder = formatAtmosphereTurnReminder({
@@ -373,6 +398,7 @@ export function buildChatMessages(params: {
       let userText = mentionName
         ? `【@${mentionName}】${m.text || '（发送了一张图片）'}`
         : m.text || '（发送了一张图片）'
+      userText = prefixTravelerUtterance(userText, userProfile)
       if (atmosphereReminder) {
         userText = `${atmosphereReminder}\n${userText}`
       }
@@ -388,7 +414,7 @@ export function buildChatMessages(params: {
     } else if (m.role === 'character' && m.characterId) {
       const name = characters[m.characterId]?.name ?? m.characterId
       const roleName = roles?.npc.name
-      const prefix = roleName ? `[${name}/${roleName}]` : `[${name}]`
+      const prefix = roleName ? `[男主·${name}/${roleName}]` : `[男主·${name}]`
       const body = stripSpeakerLabelPrefixes(m.text) || '……'
       msgs.push({ role: 'assistant', content: `${prefix}：${body}` })
     }

@@ -17,6 +17,7 @@ import { useBodyStatsStore } from './store/bodyStatsStore'
 import { useAdventureStatsStore } from './store/adventureStatsStore'
 import { useAzeriaProgressStore } from './store/azeriaProgressStore'
 import { useTavernLifeStore } from './store/tavernLifeStore'
+import { useFestivalStore } from './store/festivalStore'
 import { useGeneratedStore } from './store/generatedStore'
 import { applyCustomColors } from './utils/customColors'
 import { applyLayoutScheme } from './ui/layout/templates/layoutSchemes'
@@ -49,6 +50,7 @@ export default function App() {
   const loadAdventureStats = useAdventureStatsStore((s) => s.load)
   const loadAzeriaProgress = useAzeriaProgressStore((s) => s.load)
   const loadTavernLife = useTavernLifeStore((s) => s.load)
+  const loadFestivals = useFestivalStore((s) => s.load)
   const loadGenerated = useGeneratedStore((s) => s.load)
   const flowStage = useUIStore((s) => s.flowStage)
   const setFlowStage = useUIStore((s) => s.setFlowStage)
@@ -67,8 +69,9 @@ export default function App() {
     loadAdventureStats()
     void loadAzeriaProgress()
     void loadTavernLife()
+    void loadFestivals()
     void loadGenerated()
-  }, [loadData, loadSettings, loadSessions, loadProfiles, loadMusic, loadShop, loadCustomRegions, loadPassport, loadBodyStats, loadAdventureStats, loadAzeriaProgress, loadTavernLife, loadGenerated])
+  }, [loadData, loadSettings, loadSessions, loadProfiles, loadMusic, loadShop, loadCustomRegions, loadPassport, loadBodyStats, loadAdventureStats, loadAzeriaProgress, loadTavernLife, loadFestivals, loadGenerated])
 
   useEffect(() => {
     if (theme) applyTheme(theme)

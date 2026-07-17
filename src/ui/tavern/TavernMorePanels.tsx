@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { TomeSubShell } from '@/ui/shared/TomeSubShell'
 import {
   ADVENTURE_CLASSES,
@@ -18,13 +18,27 @@ import { useAzeriaProgressStore } from '@/store/azeriaProgressStore'
 import { AZERIA_GIFTS, CRAFT_RECIPES, FACTIONS } from '@/data/azeriaGifts'
 import { CULTIVATION_LABELS, CULTIVATION_MAX, type CultivationKey } from '@/data/cultivation'
 
+type PersonaDraft = {
+  name: string
+  age: string
+  gender: string
+  assets: string
+  livingEnvironment: string
+  homeLayout: string
+  persona: string
+}
+
 export function TavernAdventurer({ onBack }: { onBack: () => void }) {
   const attributes = useAdventureStatsStore((s) => s.attributes)
   const setAttributes = useAdventureStatsStore((s) => s.setAttributes)
   const classId = useAdventureStatsStore((s) => s.classId)
   const setClass = useAdventureStatsStore((s) => s.setClass)
   const level = useAdventureStatsStore((s) => s.level)
+  const xp = useAdventureStatsStore((s) => s.xp)
+  const skillPoints = useAdventureStatsStore((s) => s.skillPoints)
+  const spendSkillPoint = useAdventureStatsStore((s) => s.spendSkillPoint)
   const race = useAdventureStatsStore((s) => s.race)
+  const bodyType = useAdventureStatsStore((s) => s.bodyType)
   const background = useAdventureStatsStore((s) => s.background)
   const setMeta = useAdventureStatsStore((s) => s.setMeta)
   const cultivation = usePassportStore((s) => s.cultivation)
@@ -32,26 +46,160 @@ export function TavernAdventurer({ onBack }: { onBack: () => void }) {
   const labels = gender === 'male' ? MALE_STAT_LABELS : FEMALE_STAT_LABELS
   const cls = ADVENTURE_CLASSES.find((c) => c.id === classId)
   const setActiveTab = useUIStore((s) => s.setActiveTab)
-  const selectedRegionId = useUIStore((s) => s.selectedRegionId)
   const showToast = useUIStore((s) => s.showToast)
   const profiles = useProfileStore((s) => s.profiles)
   const updateProfile = useProfileStore((s) => s.updateProfile)
+  const createProfile = useProfileStore((s) => s.createProfile)
+  const canCreate = useProfileStore((s) => s.canCreate)
   const activeProfileId = useSettingsStore((s) => s.settings.ui.activeProfileId)
-  const profile = profiles.find((p) => p.id === activeProfileId)
+  const updateUI = useSettingsStore((s) => s.updateUI)
+  const profile = profiles.find((p) => p.id === activeProfileId) ?? profiles[0]
+
+  const [draft, setDraft] = useState<PersonaDraft>({
+    name: '',
+    age: '',
+    gender: '',
+    assets: '',
+    livingEnvironment: '',
+    homeLayout: '',
+    persona: '',
+  })
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (!profile) return
+    setDraft({
+      name: profile.name ?? '',
+      age: profile.age ?? '',
+      gender: profile.gender ?? '',
+      assets: profile.assets ?? '',
+      livingEnvironment: profile.livingEnvironment ?? '',
+      homeLayout: profile.homeLayout ?? '',
+      persona: profile.persona ?? '',
+    })
+  }, [profile?.id])
+
+  const patchDraft = (partial: Partial<PersonaDraft>) =>
+    setDraft((d) => ({ ...d, ...partial }))
+
+  const savePersona = async () => {
+    if (!draft.name.trim()) {
+      showToast('请填写角色姓名', '这是你在对话里扮演的人')
+      return
+    }
+    setSaving(true)
+    try {
+      if (profile) {
+        await updateProfile(profile.id, {
+          name: draft.name.trim(),
+          age: draft.age.trim(),
+          gender: draft.gender.trim(),
+          assets: draft.assets.trim(),
+          livingEnvironment: draft.livingEnvironment.trim(),
+          homeLayout: draft.homeLayout.trim(),
+          persona: draft.persona.trim(),
+        })
+        if (profile.id !== activeProfileId) {
+          await updateUI({ activeProfileId: profile.id })
+        }
+      } else if (canCreate()) {
+        const created = await createProfile({
+          name: draft.name.trim(),
+          avatar: '',
+          age: draft.age.trim(),
+          gender: draft.gender.trim(),
+          assets: draft.assets.trim(),
+          livingEnvironment: draft.livingEnvironment.trim(),
+          homeLayout: draft.homeLayout.trim(),
+          persona: draft.persona.trim(),
+        })
+        if (created) await updateUI({ activeProfileId: created.id })
+      } else {
+        showToast('无法创建', '模板已满，请先在设置里清理')
+        return
+      }
+      showToast('冒险者档案已保存', '聊天时 AI 将按此角色与你对话')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const depart = () => {
     showToast('以此身份出发', '请在地图选择地区或 POI')
     setActiveTab('adventure')
-    if (selectedRegionId) {
-      /* 保留当前选区 */
-    }
   }
+
+  const field = (
+    label: string,
+    key: keyof PersonaDraft,
+    opts?: { rows?: number; placeholder?: string },
+  ) => (
+    <label className="mt-2 block text-[11px]" style={{ color: 'var(--c-text-dim)' }}>
+      {label}
+      {opts?.rows ? (
+        <textarea
+          className="mt-1 w-full rounded-lg px-3 py-2 text-sm"
+          rows={opts.rows}
+          style={{ background: 'var(--c-bg)', color: 'var(--c-text)', border: '1px solid var(--c-border)' }}
+          value={draft[key]}
+          onChange={(e) => patchDraft({ [key]: e.target.value })}
+          placeholder={opts.placeholder}
+        />
+      ) : (
+        <input
+          className="mt-1 w-full rounded-lg px-3 py-2 text-sm"
+          style={{ background: 'var(--c-bg)', color: 'var(--c-text)', border: '1px solid var(--c-border)' }}
+          value={draft[key]}
+          onChange={(e) => patchDraft({ [key]: e.target.value })}
+          placeholder={opts?.placeholder}
+        />
+      )}
+    </label>
+  )
 
   return (
     <TomeSubShell title="冒险者档案" onBack={onBack}>
-      <p className="tome-hint mb-3">规则书 Ch3 / Ch1.4：六维属性、职业与身体状态。可改人设后直接出发。</p>
+      <p className="tome-hint mb-3">
+        与设置「我的模板」同一套。这里保存的是你操控的角色：聊天时你扮演此人，AI 只扮演男主，不会视角错乱。
+      </p>
 
-      <button type="button" className="tome-btn tome-btn--accent mb-3 w-full" onClick={depart}>
+      <section className="tome-card mb-3">
+        <div className="tome-section__title">玩家角色卡（AI 读取）</div>
+        {field('角色姓名 *', 'name', { placeholder: '对话气泡与 AI 识别用此名' })}
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          {field('年龄', 'age', { placeholder: '如 22' })}
+          {field('性别', 'gender', { placeholder: '女 / 男 / 其他' })}
+        </div>
+        {field('人设自述 *', 'persona', {
+          rows: 5,
+          placeholder: '外貌、性格、说话方式、过往、对男主的态度……越详细，男主越能对上你。',
+        })}
+        {field('资产 / 社会身份', 'assets', {
+          rows: 2,
+          placeholder: '金币、爵位、行会身份、随身物…',
+        })}
+        {field('居住环境', 'livingEnvironment', {
+          rows: 2,
+          placeholder: '常住何处、旅行习惯…',
+        })}
+        {field('家庭 / 私密空间布置', 'homeLayout', {
+          rows: 2,
+          placeholder: '酒馆阁楼布置、喜欢的氛围…',
+        })}
+        <button
+          type="button"
+          className="tome-btn tome-btn--accent mt-3 w-full"
+          disabled={saving}
+          onClick={() => void savePersona()}
+        >
+          {saving ? '保存中…' : '保存角色卡 · AI 按此读取'}
+        </button>
+        <p className="tome-hint mt-2">
+          保存后立即生效于下一句对话。设置里的「我的模板」会同步这份内容。
+        </p>
+      </section>
+
+      <button type="button" className="tome-btn mb-3 w-full" onClick={depart}>
         以此身份出发 · 打开地图
       </button>
 
@@ -61,13 +209,26 @@ export function TavernAdventurer({ onBack }: { onBack: () => void }) {
           <div className="tome-stat__label">等级</div>
         </div>
         <div className="tome-stat">
-          <div className="tome-stat__value tome-stat__value--accent">{cls?.name ?? '未选'}</div>
+          <div className="tome-stat__value">{xp ?? 0}</div>
+          <div className="tome-stat__label">经验</div>
+        </div>
+        <div className="tome-stat">
+          <div className="tome-stat__value tome-stat__value--accent">{skillPoints ?? 0}</div>
+          <div className="tome-stat__label">技能点</div>
+        </div>
+        <div className="tome-stat">
+          <div className="tome-stat__value">{cls?.name ?? '未选'}</div>
           <div className="tome-stat__label">职业</div>
         </div>
       </div>
+      {(skillPoints ?? 0) > 0 && (
+        <p className="tome-hint mb-2">
+          有 {skillPoints} 点技能点：点击下方属性旁的「+」分配（委托成功可升级）。
+        </p>
+      )}
 
       <section className="tome-card mb-3">
-        <div className="tome-section__title">身份（可编辑）</div>
+        <div className="tome-section__title">冒险身份（并入 AI 读取）</div>
         <label className="mt-2 block text-[11px]" style={{ color: 'var(--c-text-dim)' }}>
           种族
           <input
@@ -79,7 +240,17 @@ export function TavernAdventurer({ onBack }: { onBack: () => void }) {
           />
         </label>
         <label className="mt-2 block text-[11px]" style={{ color: 'var(--c-text-dim)' }}>
-          背景
+          体型气质
+          <input
+            className="mt-1 w-full rounded-lg px-3 py-2 text-sm"
+            style={{ background: 'var(--c-bg)', color: 'var(--c-text)', border: '1px solid var(--c-border)' }}
+            value={bodyType ?? ''}
+            onChange={(e) => void setMeta({ bodyType: e.target.value })}
+            placeholder="纤细 / 高挑 / 结实…"
+          />
+        </label>
+        <label className="mt-2 block text-[11px]" style={{ color: 'var(--c-text-dim)' }}>
+          冒险背景
           <textarea
             className="mt-1 w-full rounded-lg px-3 py-2 text-sm"
             rows={2}
@@ -89,18 +260,6 @@ export function TavernAdventurer({ onBack }: { onBack: () => void }) {
             placeholder="出身与过往…"
           />
         </label>
-        {profile && (
-          <label className="mt-2 block text-[11px]" style={{ color: 'var(--c-text-dim)' }}>
-            人设备注（注入 AI）
-            <textarea
-              className="mt-1 w-full rounded-lg px-3 py-2 text-sm"
-              rows={2}
-              style={{ background: 'var(--c-bg)', color: 'var(--c-text)', border: '1px solid var(--c-border)' }}
-              value={profile.persona}
-              onChange={(e) => void updateProfile(profile.id, { persona: e.target.value })}
-            />
-          </label>
-        )}
         <div className="mt-2 flex flex-wrap gap-2">
           {ADVENTURE_CLASSES.map((c) => (
             <button
@@ -144,9 +303,16 @@ export function TavernAdventurer({ onBack }: { onBack: () => void }) {
                   <button
                     type="button"
                     className="tome-btn"
-                    onClick={() =>
+                    title={(skillPoints ?? 0) > 0 ? '消耗 1 技能点' : '手动调整'}
+                    onClick={() => {
+                      if ((skillPoints ?? 0) > 0) {
+                        void spendSkillPoint(k).then((ok) => {
+                          if (ok) showToast('技能点已分配', ATTR_LABELS[k])
+                        })
+                        return
+                      }
                       void setAttributes({ ...attributes, [k]: Math.min(18, attributes[k] + 1) })
-                    }
+                    }}
                   >
                     +
                   </button>
@@ -196,7 +362,10 @@ export function TavernAdventurer({ onBack }: { onBack: () => void }) {
         </p>
       </section>
 
-      <pre className="tome-card mt-3 whitespace-pre-wrap text-[10px]" style={{ color: 'var(--c-text-dim)' }}>
+      <pre
+        className="tome-card mt-3 whitespace-pre-wrap text-[10px]"
+        style={{ color: 'var(--c-text-dim)' }}
+      >
         {formatAdventureStatsPanel(attributes, classId)}
       </pre>
     </TomeSubShell>

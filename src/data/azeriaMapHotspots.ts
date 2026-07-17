@@ -86,6 +86,17 @@ export const AZERIA_MAP_HOTSPOTS: AzeriaMapHotspot[] = [
   },
 ]
 
+/** 冒险者酒馆 · 帝都东南侧（驻留 / 大厅闲聊入口） */
+export const AZERIA_TAVERN_PIN = {
+  id: 'adventurer_tavern',
+  xPct: 61,
+  yPct: 54,
+  label: '冒险者酒馆',
+  hue: '#d4a574',
+  facilityId: 'dice_tavern',
+  leadId: 'human_rowan',
+} as const
+
 export function hotspotToPx(h: AzeriaMapHotspot): { x: number; y: number } {
   return {
     x: (h.xPct / 100) * AZERIA_MAP_SIZE.width,

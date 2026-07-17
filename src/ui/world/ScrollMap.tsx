@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { MapPin, X, Compass, Swords, User, ChevronLeft } from 'lucide-react'
+import { MapPin, X, Compass, Swords, User, ChevronLeft, Plus, Beer, Home } from 'lucide-react'
 import { FACILITIES, FACILITY_MAP, getZone } from '@/data/facilities'
 import {
   AZERIA_WORLD_REGION_MAP,
@@ -8,16 +8,24 @@ import {
   type AzeriaPoi,
   type AzeriaWorldRegion,
 } from '@/data/azeriaWorldRegions'
-import { AZERIA_MAP_HOTSPOTS, AZERIA_MAP_SIZE, hotspotToPx } from '@/data/azeriaMapHotspots'
+import { AZERIA_MAP_HOTSPOTS, AZERIA_MAP_SIZE, AZERIA_TAVERN_PIN, hotspotToPx } from '@/data/azeriaMapHotspots'
 import { useDataStore } from '@/store/dataStore'
 import { usePassportStore } from '@/store/passportStore'
 import { useUIStore } from '@/store/uiStore'
 import { useSessionStore } from '@/store/sessionStore'
+import { useCustomRegionStore } from '@/store/customRegionStore'
 import { resolveAzeriaRegion } from '@/worldview/azeriaRegionMap'
 import { ZoneDetailPage } from './ZoneDetailPage'
 import type { FacilityDef, ThemeZoneId } from '@/data/facilities'
 import { getCharacterImageCandidates, characterPlaceholder } from '@/utils/image'
-import type { CharacterCard } from '@/types'
+import type { BondRecord, CharacterCard, Region } from '@/types'
+import {
+  enterTavernHallChat,
+  enterTavernStayGroup,
+  enterTavernStayPrivate,
+  openTavernHub,
+} from '@/utils/tavernStay'
+import { HOME_PRESET_MAP } from '@/data/homes'
 
 const MAP_WIDTH = AZERIA_MAP_SIZE.width
 const MAP_HEIGHT = AZERIA_MAP_SIZE.height
@@ -47,6 +55,11 @@ export function ScrollMap() {
   const setActiveTab = useUIStore((s) => s.setActiveTab)
   const createSession = useSessionStore((s) => s.createSession)
   const activeSession = useSessionStore((s) => s.activeSession)
+  const customRegions = useCustomRegionStore((s) => s.regions)
+  const setWorldTreeModalOpen = useUIStore((s) => s.setWorldTreeModalOpen)
+  const homeIds = usePassportStore((s) => s.homeIds)
+  const bonds = usePassportStore((s) => s.bonds)
+  const homePresetId = usePassportStore((s) => s.homePresetId)
 
   const activeWorldId = activeSession?.regionId ? regions[activeSession.regionId]?.worldId : undefined
   const isAzeriaWorld = !activeWorldId || activeWorldId === 'azeria' || activeWorldId === 'aetherion'
@@ -55,6 +68,7 @@ export function ScrollMap() {
   const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(null)
   const [selectedLocation, setSelectedLocation] = useState<AzeriaPoi | null>(null)
   const [detailZoneId, setDetailZoneId] = useState<ThemeZoneId | null>(null)
+  const [tavernOpen, setTavernOpen] = useState(false)
 
   const selectedRegion =
     panelOpen && selectedRegionId ? AZERIA_WORLD_REGION_MAP[selectedRegionId] : null
@@ -82,6 +96,7 @@ export function ScrollMap() {
   }, [characters, regions, stamps])
 
   const selectRegion = (regionId: string) => {
+    setTavernOpen(false)
     setSelectedRegionId(regionId)
     setPanelOpen(true)
     setSelectedFacilityId(null)
@@ -90,10 +105,20 @@ export function ScrollMap() {
     if (hotspot) setRegionHue(hotspot.hue)
   }
 
+  const openTavernPin = () => {
+    setPanelOpen(false)
+    setSelectedFacilityId(null)
+    setSelectedLocation(null)
+    setSelectedRegionId(null)
+    setRegionHue(AZERIA_TAVERN_PIN.hue)
+    setTavernOpen(true)
+  }
+
   const closeRegionPanel = () => {
     setPanelOpen(false)
     setSelectedFacilityId(null)
     setSelectedLocation(null)
+    setTavernOpen(false)
   }
 
   const enterFacility = (facilityId: string) => {
@@ -104,7 +129,11 @@ export function ScrollMap() {
     openFacilityPlayPage(facilityId)
   }
 
-  const freeRoamInto = async (facilityId: string, location?: AzeriaPoi | string) => {
+  const freeRoamInto = async (
+    facilityId: string,
+    location?: AzeriaPoi | string,
+    worldRegionId?: string,
+  ) => {
     const region = regions[facilityId]
     if (!region) {
       useUIStore.getState().showToast('无法进入', '关联冒险域未载入，请检查游戏数据')
@@ -116,7 +145,7 @@ export function ScrollMap() {
         : location
     const titleHint = loc?.name
     const { buildFreeRoamParticipants, freeRoamSessionTitle } = await import('@/utils/freeRoamParty')
-    const pids = buildFreeRoamParticipants(facilityId)
+    const pids = buildFreeRoamParticipants(facilityId, worldRegionId)
     await createSession({
       regionId: facilityId,
       participantIds: pids,
@@ -138,6 +167,27 @@ export function ScrollMap() {
     setActiveTab('chat')
   }
 
+  const enterCustomRegion = async (region: Region) => {
+    const pids = (region.defaultParticipants ?? []).filter((id) => characters[id] || runtimeChars[id])
+    await createSession({
+      regionId: region.id,
+      participantIds: pids.length ? pids : [],
+      type: region.type ?? (pids.length > 1 ? 'group' : 'private'),
+      title: `${region.name} · 自定义`,
+      withIntro: true,
+      playMode: '自由游玩',
+      exploreStyle: 'free',
+    })
+    if (region.worldbook || region.premise) {
+      await useSessionStore.getState().appendSystemMessage(
+        `【抵达 · ${region.name}】\n${region.worldbook || region.premise}`,
+        'narrator',
+      )
+    }
+    useUIStore.getState().setImmersionMode('explore')
+    setActiveTab('chat')
+  }
+
   const primaryFacilityId = (region: AzeriaWorldRegion) =>
     region.facilityIds?.find((id) => regions[id]) ?? region.facilityIds?.[0]
 
@@ -149,12 +199,33 @@ export function ScrollMap() {
 
   return (
     <div className="scroll-map">
+      <div className="scroll-map__tools">
+        <button
+          type="button"
+          className="scroll-map__tool-btn"
+          onClick={() => setWorldTreeModalOpen(true)}
+        >
+          <Plus size={14} /> 添加地点
+        </button>
+        <button
+          type="button"
+          className="scroll-map__tool-btn scroll-map__tool-btn--tavern"
+          onClick={openTavernPin}
+        >
+          <Beer size={14} /> 酒馆
+        </button>
+      </div>
+
       <div className="scroll-map__frame">
         <div className="scroll-map__rod scroll-map__rod--top" aria-hidden />
         <MapCanvas
           markers={markers}
+          customPins={customRegions}
           selectedRegionId={selectedRegionId}
+          tavernSelected={tavernOpen}
           onSelect={selectRegion}
+          onSelectTavern={openTavernPin}
+          onSelectCustom={(r) => void enterCustomRegion(r)}
           stampCount={stampedCount}
           mapSrc={mapSrc}
           mapAlt={mapAlt}
@@ -164,7 +235,30 @@ export function ScrollMap() {
       </div>
 
       <AnimatePresence>
-        {selectedRegion && !selectedFacility && !selectedLocation && (
+        {tavernOpen && (
+          <TavernMapPanel
+            residents={homeIds.map((id) => bonds[id]).filter(Boolean)}
+            presetName={HOME_PRESET_MAP[homePresetId]?.name ?? '酒馆阁楼'}
+            lead={characters[AZERIA_TAVERN_PIN.leadId] ?? null}
+            onClose={closeRegionPanel}
+            onOpenHub={() => {
+              closeRegionPanel()
+              openTavernHub()
+            }}
+            onHallChat={() => void enterTavernHallChat().then(() => closeRegionPanel())}
+            onGroupChat={() => void enterTavernStayGroup().then(() => closeRegionPanel())}
+            onPrivate={(id) => void enterTavernStayPrivate(id).then(() => closeRegionPanel())}
+            onManageResidents={() => {
+              closeRegionPanel()
+              useUIStore.getState().setTavernSubView('residents')
+              useUIStore.getState().setActiveTab('tavern')
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {selectedRegion && !selectedFacility && !selectedLocation && !tavernOpen && (
           <RegionPanel
             region={selectedRegion}
             cityLabel={AZERIA_MAP_HOTSPOTS.find((h) => h.regionId === selectedRegion.id)?.cityLabel}
@@ -199,6 +293,7 @@ export function ScrollMap() {
                         worldbook: `【区域世界书 · ${selectedRegion.name}】\n${selectedRegion.description}\n环境：${selectedRegion.env} · 统治：${selectedRegion.race}`,
                       }
                     : undefined,
+                  selectedRegion.id,
                 )
               } else {
                 useUIStore.getState().showToast('无法进入', '本域暂无可用冒险域数据')
@@ -217,7 +312,7 @@ export function ScrollMap() {
             onBack={() => setSelectedLocation(null)}
             onEnter={() => {
               const fid = primaryFacilityId(selectedRegion)
-              if (fid) void freeRoamInto(fid, selectedLocation)
+              if (fid) void freeRoamInto(fid, selectedLocation, selectedRegion.id)
               else useUIStore.getState().showToast('无法进入', '本域暂无可用冒险域数据')
             }}
           />
@@ -260,8 +355,12 @@ type MapMarker = (typeof AZERIA_MAP_HOTSPOTS)[number] & {
 
 interface MapCanvasProps {
   markers: MapMarker[]
+  customPins: Region[]
   selectedRegionId: string | null
+  tavernSelected: boolean
   onSelect: (regionId: string) => void
+  onSelectTavern: () => void
+  onSelectCustom: (region: Region) => void
   stampCount: number
   mapSrc: string
   mapAlt: string
@@ -270,8 +369,12 @@ interface MapCanvasProps {
 
 function MapCanvas({
   markers,
+  customPins,
   selectedRegionId,
+  tavernSelected,
   onSelect,
+  onSelectTavern,
+  onSelectCustom,
   stampCount,
   mapSrc,
   mapAlt,
@@ -540,13 +643,66 @@ function MapCanvas({
           )
         })}
 
+        <button
+          type="button"
+          className={`azeria-pin azeria-pin--tavern ${tavernSelected ? 'azeria-pin--active' : ''}`}
+          style={{
+            left: (AZERIA_TAVERN_PIN.xPct / 100) * MAP_WIDTH,
+            top: (AZERIA_TAVERN_PIN.yPct / 100) * MAP_HEIGHT,
+            ['--pin-hue' as string]: AZERIA_TAVERN_PIN.hue,
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation()
+            if (gestureRef.current.moved) return
+            onSelectTavern()
+          }}
+          aria-label={AZERIA_TAVERN_PIN.label}
+        >
+          <span className="azeria-pin__pulse" />
+          <span className="azeria-pin__ring azeria-pin__ring--tavern">
+            <Beer size={18} />
+          </span>
+          <span className="azeria-pin__label">{AZERIA_TAVERN_PIN.label}</span>
+        </button>
+
+        {customPins.map((r) => {
+          const xPct = typeof r.mapX === 'number' ? r.mapX : 50
+          const yPct = typeof r.mapY === 'number' ? r.mapY : 50
+          const left = (MAP_WIDTH * Math.min(100, Math.max(0, xPct))) / 100
+          const top = (MAP_HEIGHT * Math.min(100, Math.max(0, yPct))) / 100
+          return (
+            <button
+              key={r.id}
+              type="button"
+              className="azeria-pin azeria-pin--custom"
+              style={{ left, top, ['--pin-hue' as string]: '#c9a35a' }}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation()
+                if (gestureRef.current.moved) return
+                onSelectCustom(r)
+              }}
+              aria-label={`自定义地点 · ${r.name}`}
+              title={r.mapNote || r.name}
+            >
+              <span className="azeria-pin__pulse" />
+              <span className="azeria-pin__ring azeria-pin__ring--custom">
+                <MapPin size={16} />
+              </span>
+              <span className="azeria-pin__label">{r.name}</span>
+            </button>
+          )
+        })}
+
         <div className="scroll-map__caption">
           <div className="scroll-map__caption-title">
             <Compass size={14} />
             {mapCaptionTitle}
           </div>
           <div className="scroll-map__caption-sub">
-            点城邦立绘 · 已契约 {stampCount} / {FACILITIES.length}
+            点城邦立绘 · 酒馆可驻留聊天 · 已契约 {stampCount} / {FACILITIES.length}
+            {customPins.length > 0 ? ` · 自定义 ${customPins.length}` : ''}
           </div>
         </div>
       </div>
@@ -834,6 +990,99 @@ function FacilityPanel({
         </button>
         <button type="button" className="scroll-map__panel-more" onClick={onZoneGuide}>
           区域导览 →
+        </button>
+      </div>
+    </motion.div>
+  )
+}
+
+function TavernMapPanel({
+  residents,
+  presetName,
+  lead,
+  onClose,
+  onOpenHub,
+  onHallChat,
+  onGroupChat,
+  onPrivate,
+  onManageResidents,
+}: {
+  residents: BondRecord[]
+  presetName: string
+  lead: CharacterCard | null
+  onClose: () => void
+  onOpenHub: () => void
+  onHallChat: () => void
+  onGroupChat: () => void
+  onPrivate: (characterId: string) => void
+  onManageResidents: () => void
+}) {
+  return (
+    <motion.div
+      className="scroll-map__panel no-scrollbar"
+      initial={{ y: '110%' }}
+      animate={{ y: 0 }}
+      exit={{ y: '110%' }}
+      transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+    >
+      <button type="button" className="scroll-map__panel-close" onClick={onClose}>
+        <X size={16} />
+      </button>
+
+      {lead && (
+        <div className="azeria-region-panel__leads">
+          <div className="azeria-region-panel__lead">
+            <img src={leadPortrait(lead)} alt="" />
+            <div>
+              <div className="azeria-region-panel__lead-name">{lead.name}</div>
+              <div className="azeria-region-panel__lead-title">{lead.title}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <h3 className="scroll-map__panel-name">冒险者酒馆</h3>
+      <p className="scroll-map__panel-archetype">帝都东南 · 驻留氛围「{presetName}」</p>
+      <p className="scroll-map__panel-desc">
+        想和驻留角色说话，就在这里点开。也可进大厅管委托、编组，或直接在酒馆闲聊。
+      </p>
+
+      <div className="scroll-map__panel-section">
+        <div className="scroll-map__panel-section-title">
+          <Home size={12} /> 驻留对象（{residents.length}）
+        </div>
+        {residents.length === 0 ? (
+          <p className="scroll-map__panel-hint">暂无驻留。可先开酒馆大厅，从名册安置对象。</p>
+        ) : (
+          <div className="azeria-region-panel__entries">
+            {residents.map((b) => (
+              <button
+                key={b.characterId}
+                type="button"
+                className="tome-btn azeria-region-panel__loc-btn"
+                onClick={() => onPrivate(b.characterId)}
+              >
+                私语 · {b.displayName}
+              </button>
+            ))}
+          </div>
+        )}
+        {residents.length >= 2 && (
+          <button type="button" className="tome-btn mt-2 w-full" onClick={onGroupChat}>
+            驻留群聊（{residents.length} 人）
+          </button>
+        )}
+        <button type="button" className="tome-btn tome-btn--ghost mt-2 w-full" onClick={onManageResidents}>
+          管理驻留 / 切换氛围
+        </button>
+      </div>
+
+      <div className="scroll-map__panel-actions scroll-map__panel-actions--stack">
+        <button type="button" className="scroll-map__panel-enter" onClick={onHallChat}>
+          <Beer size={14} /> 酒馆大厅闲聊
+        </button>
+        <button type="button" className="scroll-map__panel-more" onClick={onOpenHub}>
+          <MapPin size={14} /> 进入酒馆功能大厅
         </button>
       </div>
     </motion.div>

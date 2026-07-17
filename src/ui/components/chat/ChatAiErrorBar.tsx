@@ -34,7 +34,7 @@ export function ChatAiErrorBar() {
         {aiReplying
           ? 'AI 正在生成回复…'
           : pendingLink
-            ? '文本 API 已填写但未测连，当前可能走演示回复。请先在设置里测试连接。'
+            ? '文本 API 已填写但未测连：聊天会直连真实接口，失败时才报错。建议先在设置里点「测试连接」。'
             : aiError}
       </span>
       <div className="flex shrink-0 gap-1.5">

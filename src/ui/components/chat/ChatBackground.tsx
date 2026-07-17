@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDataStore } from '@/store/dataStore'
 import { useSessionStore } from '@/store/sessionStore'
+import { isPresetLeadCharacter } from '@/data/regionalLeads'
 import {
   getCharacterImageCandidates,
   resolveCharacterPortrait,
@@ -24,14 +25,21 @@ interface ChatBackgroundProps {
   locked?: boolean
 }
 
-/** 聊天区域背景：跟随当前说话 NPC 的立绘，带遮罩与淡入淡出 */
+/**
+ * 聊天背景：预设立绘男主用「透明毛玻璃」露出立绘；
+ * 动态 AI NPC 若无立绘则走柔和氛围底。
+ */
 export function ChatBackground({ characterId, locked }: ChatBackgroundProps) {
-  const { characters } = useDataStore()
+  const { characters, runtimeCharacters } = useDataStore()
   const activeSession = useSessionStore((s) => s.activeSession)
+  const allChars = useMemo(
+    () => ({ ...characters, ...runtimeCharacters }),
+    [characters, runtimeCharacters],
+  )
 
   const sprite = useMemo(() => {
     if (!characterId) return null
-    const character = characters[characterId]
+    const character = allChars[characterId]
     if (!character) return null
     const expression = activeSession
       ? getExpressionForChar(
@@ -41,7 +49,9 @@ export function ChatBackground({ characterId, locked }: ChatBackgroundProps) {
         )
       : character.defaultExpression
     return { character, expression }
-  }, [characterId, characters, activeSession])
+  }, [characterId, allChars, activeSession])
+
+  const isLead = isPresetLeadCharacter(characterId)
 
   const candidates = useMemo(() => {
     if (!sprite) return []
@@ -61,18 +71,24 @@ export function ChatBackground({ characterId, locked }: ChatBackgroundProps) {
   }, [candidates, srcIndex, sprite])
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+    <div
+      className={`pointer-events-none absolute inset-0 z-0 overflow-hidden chat-bg-root${
+        isLead ? ' chat-bg-root--lead' : ' chat-bg-root--dynamic'
+      }`}
+    >
       <AnimatePresence mode="wait">
         {imgSrc && sprite ? (
           <motion.img
-            key={characterId}
+            key={`${characterId}-${imgSrc}`}
             src={imgSrc}
             alt={sprite.character.name}
-            initial={{ opacity: 0, scale: 1.04 }}
+            initial={{ opacity: 0, scale: 1.05 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 1.02 }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            className="h-full w-full object-cover object-top"
+            className={`chat-bg-portrait h-full w-full object-cover object-top${
+              isLead ? ' chat-bg-portrait--lead' : ''
+            }`}
             draggable={false}
             onError={(e) => {
               const t = e.currentTarget
@@ -87,23 +103,35 @@ export function ChatBackground({ characterId, locked }: ChatBackgroundProps) {
               }
             }}
           />
-        ) : null}
+        ) : (
+          <motion.div
+            key="empty-bg"
+            className="chat-bg-fallback absolute inset-0"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          />
+        )}
       </AnimatePresence>
 
-      {/* 全局色调遮罩，保证文字可读 */}
+      {/* 毛玻璃雾面：预设立绘更透，动态 NPC 更遮 */}
+      <div className="chat-bg-frost absolute inset-0" aria-hidden />
       <div className="chat-bg-scrim absolute inset-0" />
-      {/* 用户自定义聊天背景色（半透明叠层） */}
       <div className="chat-bg-custom-tint absolute inset-0" />
-      {/* 底部加重遮罩，避免与气泡/输入区冲突 */}
       <div className="chat-bg-veil absolute inset-0" />
 
+      {isLead && sprite && (
+        <div className="chat-bg-lead-badge">
+          <span>域内主角</span>
+          <strong>{sprite.character.name}</strong>
+        </div>
+      )}
+
       {locked && (
-        <div
-          className="absolute right-3 top-3 flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
-          style={{ background: 'rgba(0,0,0,0.45)', color: '#fff' }}
+        <div className="absolute right-3 top-3 rounded-full px-2 py-0.5 text-[9px] font-medium"
+          style={{ background: 'rgba(0,0,0,0.45)', color: '#fff8ee' }}
         >
-          <span>🔒</span>
-          <span>已锁定</span>
+          已锁定立绘
         </div>
       )}
     </div>

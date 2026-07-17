@@ -103,21 +103,32 @@ function AtlasHub() {
 
 function AtlasEndings() {
   const setAtlasSubView = useUIStore((s) => s.setAtlasSubView)
+  const unlocked = useAzeriaProgressStore((s) => s.unlockedEndings)
   const back = () => setAtlasSubView('hub')
   return (
     <TomeSubShell title="结局图鉴" onBack={back}>
-      <p className="tome-hint mb-3">终章 72 小时内做出最终选择（规则书 Ch13）。点击图片查看详情。</p>
+      <p className="tome-hint mb-3">
+        终章 72 小时内做出最终选择（规则书 Ch13）。对话触及的结局线会亮起。已解锁 {unlocked.length}/
+        {AZERIA_ENDINGS.length}。
+      </p>
       <div className="tome-grid-2">
-        {AZERIA_ENDINGS.map((e) => (
-          <AtlasCoverCard
-            key={e.id}
-            letter={e.letter}
-            title={e.name}
-            subtitle={e.condition.slice(0, 36) + '…'}
-            hue={e.hue}
-            onClick={() => setAtlasSubView('ending_detail', e.id)}
-          />
-        ))}
+        {AZERIA_ENDINGS.map((e) => {
+          const open = unlocked.includes(e.id)
+          return (
+            <AtlasCoverCard
+              key={e.id}
+              letter={e.letter}
+              title={e.name}
+              subtitle={
+                open
+                  ? e.condition.slice(0, 36) + '…'
+                  : '尚未触及 · 终章对话或 AI endingHint 可解锁'
+              }
+              hue={open ? e.hue : '#3a322c'}
+              onClick={() => setAtlasSubView('ending_detail', e.id)}
+            />
+          )
+        })}
       </div>
     </TomeSubShell>
   )

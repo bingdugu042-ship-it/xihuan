@@ -105,6 +105,13 @@ function parseResult(
     guideAdvanceRaw === 1 ||
     String(guideAdvanceRaw).toLowerCase() === 'true'
 
+  const mainAdvanceRaw = raw.mainAdvance
+  const mainAdvance =
+    mainAdvanceRaw === true ||
+    mainAdvanceRaw === 1 ||
+    String(mainAdvanceRaw).toLowerCase() === 'true'
+  const endingHint = String(raw.endingHint ?? '').trim() || undefined
+
   let bodyStatDeltas: MockAIResult['bodyStatDeltas']
   if (raw.bodyStatDeltas && typeof raw.bodyStatDeltas === 'object' && !Array.isArray(raw.bodyStatDeltas)) {
     const out: Record<string, number> = {}
@@ -147,6 +154,8 @@ function parseResult(
     bodyStatDeltas,
     bodyStateLabels,
     guideAdvance: guideAdvance || undefined,
+    mainAdvance: mainAdvance || undefined,
+    endingHint,
     spawnedNpcs,
   }
 }
@@ -234,6 +243,7 @@ export async function generateCharacterReply(ctx: GenerateReplyContext): Promise
     aiContextLength: preferFast && !userAskedSpawn
       ? Math.min(settings.ui.aiContextLength ?? 50, 40)
       : settings.ui.aiContextLength,
+    userProfile,
   })
 
   // JSON 优先；快档仅在首次失败/空回复时再试纯文本，避免双倍等待

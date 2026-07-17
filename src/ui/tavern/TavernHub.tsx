@@ -97,7 +97,7 @@ export function TavernHub({ onNavigate }: { onNavigate: (v: TavernSubView) => vo
       <section className="tome-section">
         <div className="tome-section__title">档案与补给</div>
         <FeatureCardGrid>
-          <FeatureCard icon={User} label="冒险者档案" sub="六维·职业·身体" color="#e8b4c4" onClick={() => onNavigate('adventurer')} />
+          <FeatureCard icon={User} label="冒险者档案" sub="玩家人设·保存后AI读取" color="#e8b4c4" onClick={() => onNavigate('adventurer')} />
           <FeatureCard icon={ShoppingBag} label="酒馆商店" sub="装备·药剂·卷轴" color="#f5b85c" onClick={() => onNavigate('shop')} />
           <FeatureCard icon={Backpack} label="背包" sub="持有物品一览" color="#7eb8d4" onClick={() => onNavigate('backpack')} />
           <FeatureCard icon={FlaskConical} label="炼金工坊" sub="媚药·治疗剂" color="#3a9e9a" onClick={() => onNavigate('craft')} />
@@ -128,6 +128,13 @@ export function TavernHub({ onNavigate }: { onNavigate: (v: TavernSubView) => vo
         <FeatureCardGrid>
           <FeatureCard icon={Trophy} label="竞技场" sub="开战掷骰" color="#a84a4a" onClick={() => onNavigate('arena')} />
           <FeatureCard icon={CalendarDays} label="日历档案" sub="纪念日·挑战" color="#7eb8d4" onClick={() => onNavigate('calendar')} />
+          <FeatureCard
+            icon={CalendarDays}
+            label="节日系统"
+            sub="预设/自定义·写入世界书"
+            color="#e8c878"
+            onClick={() => onNavigate('festivals')}
+          />
         </FeatureCardGrid>
       </section>
     </div>

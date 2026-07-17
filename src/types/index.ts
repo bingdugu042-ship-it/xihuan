@@ -121,6 +121,15 @@ export interface Region {
   maxTurns?: number
   /** 用户自定义世界树地点 */
   custom?: boolean
+  /** 自定义地图角标文案 */
+  mapNote?: string
+  /** 地点视觉样式描述 */
+  mapStyle?: string
+  /** 地图百分比坐标 0-100 */
+  mapX?: number
+  mapY?: number
+  /** 地点世界书（AI 读取） */
+  worldbook?: string
   /** 西幻万人迷：主题区 */
   themeZone?: 'exhibition' | 'domination' | 'sensory' | 'social'
   /** 西幻万人迷：域界 NPC 固定类型 */
@@ -652,4 +661,19 @@ export interface AdventureStatsData {
   bodyType?: string
   background?: string
   level?: number
+  /** 累计经验 */
+  xp?: number
+  /** 可分配技能点（每升一级 +1） */
+  skillPoints?: number
+}
+
+/** Region 扩展：自定义地图角标 */
+export interface CustomMapPinFields {
+  /** 地图位置描述 / 角标文案 */
+  mapNote?: string
+  /** 样式：古堡、林地、废墟等 */
+  mapStyle?: string
+  /** 0-100 百分比坐标（可选） */
+  mapX?: number
+  mapY?: number
 }

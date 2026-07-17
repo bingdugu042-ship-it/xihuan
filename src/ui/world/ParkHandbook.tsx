@@ -42,7 +42,7 @@ export function ParkHandbook() {
             <Scroll size={16} />
             <span>已契约 {stampCount()} / {FACILITIES.length} 处域界</span>
           </div>
-          <p className="scroll-cover__hint">轻触展开卷轴</p>
+          <p className="scroll-cover__hint">轻触展开 · 点酒馆聊天 · 可添加自定义地点</p>
         </div>
         <div className="scroll-cover__rod scroll-cover__rod--bottom" aria-hidden />
       </button>
